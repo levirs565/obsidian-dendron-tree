@@ -14,37 +14,82 @@ export function createNoteTree(folder: TFolder) {
   };
   folder.children.forEach((file) => {
     if (!file.name.endsWith(".md")) return;
-
-    const path = file.name.split(".");
-    path.pop();
-
-    if (path.length === 1 && path[0] === "root") {
-      root.file = file;
-      return;
-    }
-
-    let currentNote: Note = root;
-
-    while (path.length > 0) {
-      const name = path.shift()!;
-      let note: Note | undefined = currentNote.children.find((note) => note.name == name);
-
-      if (!note) {
-        note = {
-          name,
-          children: [],
-          parent: currentNote,
-        };
-        currentNote.children.push(note);
-      }
-
-      currentNote = note;
-    }
-
-    currentNote.file = file;
+    addNoteToTree(root, file, false);
   });
 
+  sortNote(root, true);
+
   return root;
+}
+
+function getPathFromFileName(name: string) {
+  const path = name.split(".");
+  path.pop();
+  return path;
+}
+
+export function addNoteToTree(root: Note, file: TAbstractFile, sort: boolean) {
+  const path = getPathFromFileName(file.name);
+  if (path.length === 1 && path[0] === "root") {
+    root.file = file;
+    return;
+  }
+
+  let currentNote: Note = root;
+  while (path.length > 0) {
+    const name = path.shift()!;
+    let note: Note | undefined = currentNote.children.find((note) => note.name == name);
+
+    if (!note) {
+      note = {
+        name,
+        children: [],
+        parent: currentNote,
+      };
+      currentNote.children.push(note);
+      if (sort) sortNote(currentNote, false);
+    }
+
+    currentNote = note;
+  }
+
+  currentNote.file = file;
+}
+
+export function sortNote(note: Note, rescursive: boolean) {
+  note.children.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+  if (rescursive) note.children.forEach((child) => sortNote(child, rescursive));
+}
+
+function getNoteFromFile(root: Note, name: string) {
+  const path = getPathFromFileName(name);
+
+  let currentNote: Note | undefined = root;
+  while (path.length > 0) {
+    const name = path.shift()!;
+    currentNote = currentNote?.children.find((note) => note.name == name);
+  }
+
+  return currentNote;
+}
+
+function removeBlankNote(startNote: Note) {
+  let note: Note | undefined = startNote;
+  while (note && note.parent && !note.file) {
+    const index = note.parent.children.indexOf(note);
+    note.parent.children.splice(index, 1);
+    note = note.parent;
+  }
+}
+
+export function deleteNoteFromTree(root: Note, name: string) {
+  const note = getNoteFromFile(root, name);
+  if (!note) return;
+
+  note.file = undefined;
+  if (note.children.length == 0) {
+    removeBlankNote(note);
+  }
 }
 
 export function getNotePath(note: Note) {
@@ -73,7 +118,7 @@ export function generateNoteTitle(path: string) {
 
 export async function createNote(vault: Vault, path: string, title: string) {
   const fileName = `${path}.md`;
-  const time = new Date().getTime()
+  const time = new Date().getTime();
   const frontmatter = `---
 title: "${title}"
 updated: ${time}

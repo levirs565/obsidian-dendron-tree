@@ -1,19 +1,8 @@
 <script lang="ts">
-  import { onDestroy } from "svelte/internal";
   import NoteComponent from "./NoteComponent.svelte";
-  import { createNoteTree, Note } from "./note";
-  import { plugin } from "./store";
-
-  let note: Note | undefined = undefined;
-
-  const unsubscribe = plugin.subscribe((plugin) => {
-    const root = plugin.app.vault.getRoot();
-    note = createNoteTree(root);
-  });
-
-  onDestroy(unsubscribe);
+  import { rootNote } from "./store";
 </script>
 
-{#if note}
-  <NoteComponent {note} />
+{#if $rootNote}
+  <NoteComponent note={$rootNote} />
 {/if}

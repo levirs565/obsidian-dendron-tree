@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
-  import { Note, createNote, generateNoteTitle, getNoteFileName, getNotePath } from "./note";
+  import { Note, createNote, generateNoteTitle, getNotePath } from "./note";
   import { Menu, TAbstractFile, TFile, getIcon } from "obsidian";
   import { getPlugin } from "./store";
   import path from "path";

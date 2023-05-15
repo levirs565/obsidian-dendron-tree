@@ -7,8 +7,11 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
+  TAbstractFile,
 } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
+import { rootNote } from "./store";
+import { addNoteToTree, createNoteTree, deleteNoteFromTree } from "./note";
 
 // Remember to rename these classes and interfaces!
 
@@ -92,11 +95,46 @@ export default class DendronTreePlugin extends Plugin {
     this.addRibbonIcon("dice", "Activate view", () => {
       this.activateView();
     });
+
+    rootNote.set(createNoteTree(this.app.vault.getRoot()));
+
+    this.app.vault.on("create", this.onCreateFile);
+    this.app.vault.on("delete", this.onDeleteFile);
+    this.app.vault.on("rename", this.onRenameFile);
   }
 
   onunload() {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DENDRON);
+    this.app.vault.off("create", this.onCreateFile);
   }
+
+  onCreateFile(file: TAbstractFile) {
+    rootNote.update((note) => {
+      if (file.name.endsWith(".md")) {
+        addNoteToTree(note, file, true);
+      }
+      return note;
+    });
+  }
+
+  onDeleteFile(file: TAbstractFile) {
+    rootNote.update((note) => {
+      if (file.name.endsWith(".md")) deleteNoteFromTree(note, file.name);
+      return note;
+    });
+  }
+
+  onRenameFile = (file: TAbstractFile, oldPath: string) => {
+    rootNote.update((note) => {
+      if (file.name.endsWith(".md")) {
+        const oldName = oldPath.split("/").pop()!.split("\\").pop()!;
+        deleteNoteFromTree(note, oldName);
+        addNoteToTree(note, file, true);
+      }
+
+      return note;
+    });
+  };
 
   async activateView() {
     const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_DENDRON);
