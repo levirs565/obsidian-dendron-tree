@@ -99,14 +99,17 @@ export default class DendronTreePlugin extends Plugin {
   }
 
   async activateView() {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
-
-    await this.app.workspace.getRightLeaf(false).setViewState({
-      type: VIEW_TYPE_EXAMPLE,
-      active: true,
-    });
-
-    this.app.workspace.revealLeaf(this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE)[0]);
+    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
+    if (leafs.length == 0) {
+      const leaf = this.app.workspace.getLeftLeaf(false);
+      await leaf.setViewState({
+        type: VIEW_TYPE_EXAMPLE,
+        active: true,
+      });
+      this.app.workspace.revealLeaf(leaf);
+    } else {
+      leafs.forEach((leaf) => this.app.workspace.revealLeaf(leaf));
+    }
   }
 
   async loadSettings() {
