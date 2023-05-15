@@ -78,7 +78,7 @@
       />
     {/if}
     <div class="tree-item-inner">
-      {note.name}
+      {note.title}
     </div>
   </div>
   {#if note.children.length > 0 && !isCollapsed}

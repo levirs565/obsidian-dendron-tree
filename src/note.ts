@@ -1,16 +1,18 @@
-import { TAbstractFile, TFolder, Vault } from "obsidian";
+import { MetadataCache, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
 
 export interface Note {
   name: string;
   children: Note[];
   file?: TAbstractFile;
   parent?: Note;
+  title: string;
 }
 
 export function createNoteTree(folder: TFolder) {
   const root: Note = {
     name: "root",
     children: [],
+    title: "Root",
   };
   folder.children.forEach((file) => {
     if (!file.name.endsWith(".md")) return;
@@ -25,15 +27,12 @@ export function createNoteTree(folder: TFolder) {
 function getPathFromFileName(name: string) {
   const path = name.split(".");
   path.pop();
+  if (path.length === 1 && path[0] === "root") return [];
   return path;
 }
 
 export function addNoteToTree(root: Note, file: TAbstractFile, sort: boolean) {
   const path = getPathFromFileName(file.name);
-  if (path.length === 1 && path[0] === "root") {
-    root.file = file;
-    return;
-  }
 
   let currentNote: Note = root;
   while (path.length > 0) {
@@ -45,6 +44,7 @@ export function addNoteToTree(root: Note, file: TAbstractFile, sort: boolean) {
         name,
         children: [],
         parent: currentNote,
+        title: generateNoteTitle(name),
       };
       currentNote.children.push(note);
       if (sort) sortNote(currentNote, false);
@@ -90,6 +90,13 @@ export function deleteNoteFromTree(root: Note, name: string) {
   if (note.children.length == 0) {
     removeBlankNote(note);
   }
+}
+
+export function updateNoteMetadata(root: Note, file: TFile, metadataCache: MetadataCache) {
+  const note = getNoteFromFile(root, file.name);
+  if (!note) return;
+  const cache = metadataCache.getFileCache(file);
+  note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
 }
 
 export function getNotePath(note: Note) {

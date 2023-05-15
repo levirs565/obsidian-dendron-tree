@@ -8,10 +8,11 @@ import {
   PluginSettingTab,
   Setting,
   TAbstractFile,
+  TFile,
 } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { rootNote } from "./store";
-import { addNoteToTree, createNoteTree, deleteNoteFromTree } from "./note";
+import { addNoteToTree, createNoteTree, deleteNoteFromTree, updateNoteMetadata } from "./note";
 
 // Remember to rename these classes and interfaces!
 
@@ -101,28 +102,32 @@ export default class DendronTreePlugin extends Plugin {
     this.app.vault.on("create", this.onCreateFile);
     this.app.vault.on("delete", this.onDeleteFile);
     this.app.vault.on("rename", this.onRenameFile);
+    this.app.metadataCache.on("resolve", this.onResolveMetadata);
   }
 
   onunload() {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DENDRON);
     this.app.vault.off("create", this.onCreateFile);
+    this.app.vault.off("delete", this.onDeleteFile);
+    this.app.vault.off("rename", this.onRenameFile);
+    this.app.metadataCache.off("resolve", this.onResolveMetadata);
   }
 
-  onCreateFile(file: TAbstractFile) {
+  onCreateFile = (file: TAbstractFile) => {
     rootNote.update((note) => {
       if (file.name.endsWith(".md")) {
         addNoteToTree(note, file, true);
       }
       return note;
     });
-  }
+  };
 
-  onDeleteFile(file: TAbstractFile) {
+  onDeleteFile = (file: TAbstractFile) => {
     rootNote.update((note) => {
       if (file.name.endsWith(".md")) deleteNoteFromTree(note, file.name);
       return note;
     });
-  }
+  };
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
     rootNote.update((note) => {
@@ -132,6 +137,15 @@ export default class DendronTreePlugin extends Plugin {
         addNoteToTree(note, file, true);
       }
 
+      return note;
+    });
+  };
+
+  onResolveMetadata = (file: TFile) => {
+    rootNote.update((note) => {
+      if (file.name.endsWith(".md")) {
+        updateNoteMetadata(note, file, this.app.metadataCache);
+      }
       return note;
     });
   };
