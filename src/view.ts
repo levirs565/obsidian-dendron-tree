@@ -1,12 +1,12 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 
-import Component from "./Component.svelte";
+import Component from "./MainComponent.svelte";
 import DendronTreePlugin from "./main";
 import * as store from "./store";
 
-export const VIEW_TYPE_EXAMPLE = "example-view";
+export const VIEW_TYPE_DENDRON = "example-view";
 
-export class ExampleView extends ItemView {
+export class DendronView extends ItemView {
   component: Component;
 
   constructor(leaf: WorkspaceLeaf, private plugin: DendronTreePlugin) {
@@ -14,7 +14,7 @@ export class ExampleView extends ItemView {
   }
 
   getViewType() {
-    return VIEW_TYPE_EXAMPLE;
+    return VIEW_TYPE_DENDRON;
   }
 
   getDisplayText() {

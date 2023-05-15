@@ -8,7 +8,7 @@ import {
   PluginSettingTab,
   Setting,
 } from "obsidian";
-import { ExampleView, VIEW_TYPE_EXAMPLE } from "./view";
+import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 
 // Remember to rename these classes and interfaces!
 
@@ -87,7 +87,7 @@ export default class DendronTreePlugin extends Plugin {
     // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
     this.registerInterval(window.setInterval(() => console.log("setInterval"), 5 * 60 * 1000));
 
-    this.registerView(VIEW_TYPE_EXAMPLE, (leaf) => new ExampleView(leaf, this));
+    this.registerView(VIEW_TYPE_DENDRON, (leaf) => new DendronView(leaf, this));
 
     this.addRibbonIcon("dice", "Activate view", () => {
       this.activateView();
@@ -95,15 +95,15 @@ export default class DendronTreePlugin extends Plugin {
   }
 
   onunload() {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE);
+    this.app.workspace.detachLeavesOfType(VIEW_TYPE_DENDRON);
   }
 
   async activateView() {
-    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_EXAMPLE);
+    const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_DENDRON);
     if (leafs.length == 0) {
       const leaf = this.app.workspace.getLeftLeaf(false);
       await leaf.setViewState({
-        type: VIEW_TYPE_EXAMPLE,
+        type: VIEW_TYPE_DENDRON,
         active: true,
       });
       this.app.workspace.revealLeaf(leaf);

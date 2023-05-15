@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy } from "svelte/internal";
-  import NoteComponent from "./Note.svelte";
+  import NoteComponent from "./NoteComponent.svelte";
   import { createNoteTree, Note } from "./note";
   import { plugin } from "./store";
 
