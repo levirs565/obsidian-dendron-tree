@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
-  import { Note } from "./note";
-  import { TFile, getIcon, getIconIds } from "obsidian";
-  import { plugin } from "./store";
+  import { Note, createNote, generateNoteTitle, getNoteFileName, getNotePath } from "./note";
+  import { Menu, TAbstractFile, TFile, getIcon } from "obsidian";
+  import { getPlugin } from "./store";
+  import path from "path";
 
   export let note: Note;
 
@@ -13,14 +14,48 @@
     node.appendChild(getIcon("right-triangle")!);
   };
 
-  function openFile() {
-    const file = note.file;
+  function openFile(file: TAbstractFile | undefined | null) {
     if (!file || !(file instanceof TFile)) return;
-    plugin.update((plugin) => {
-      const leaf = plugin.app.workspace.getLeaf();
-      leaf.openFile(file);
-      return plugin;
+    const plugin = getPlugin();
+    const leaf = plugin.app.workspace.getLeaf();
+    leaf.openFile(file);
+    return plugin;
+  }
+
+  function createCurrentNote() {
+    const path = getNotePath(note);
+    console.log(generateNoteTitle(path));
+    const plugin = getPlugin();
+    createNote(plugin.app.vault, path, generateNoteTitle(path)).then((fileName) => {
+      openFile(plugin.app.vault.getAbstractFileByPath(fileName));
     });
+  }
+
+  function deleteCurrentNote() {
+    const plugin = getPlugin();
+    if (!note.file) return;
+    plugin.app.vault.delete(note.file);
+  }
+
+  function openMenu(e: MouseEvent) {
+    const menu = new Menu();
+
+    if (!note.file) {
+      menu.addItem((item) => {
+        item.setTitle("Create Current Note").setIcon("create-new").onClick(createCurrentNote);
+      });
+    }
+
+    menu.addItem((item) => {
+      item.setTitle("Create New Note").setIcon("create-new");
+    });
+
+    if (note.file)
+      menu.addItem((item) => {
+        item.setTitle("Delete Note").setIcon("trash").onClick(deleteCurrentNote);
+      });
+
+    menu.showAtMouseEvent(e);
   }
 </script>
 
@@ -28,9 +63,10 @@
   <div
     class="tree-item-self is-clickable mod-collapsible"
     on:click={() => {
-      openFile();
+      openFile(note.file);
       isCollapsed = false;
     }}
+    on:contextmenu={openMenu}
   >
     {#if note.children.length > 0}
       <div
