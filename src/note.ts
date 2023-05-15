@@ -6,30 +6,35 @@ export interface Note {
 }
 
 export function createNoteTree(folder: TFolder) {
-  const notes: Note[] = [];
+  const root: Note = {
+    name: "root",
+    children: [],
+  };
   folder.children.forEach((file) => {
     if (!file.name.endsWith(".md")) return;
 
     const path = file.name.split(".");
     path.pop();
 
-    let currentNotes: Note[] = notes;
+    if (path.length === 1 && path[0] === "root") return;
+
+    let currentNote: Note = root;
 
     while (path.length > 0) {
       const name = path.shift()!;
-      let note: Note | undefined = currentNotes.find((note) => note.name == name);
+      let note: Note | undefined = currentNote.children.find((note) => note.name == name);
 
       if (!note) {
         note = {
           name,
           children: [],
         };
-        currentNotes.push(note);
+        currentNote.children.push(note);
       }
 
-      currentNotes = note.children;
+      currentNote = note;
     }
   });
 
-  return notes;
+  return root;
 }
