@@ -1,13 +1,14 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 
 import Component from "./Component.svelte";
+import DendronTreePlugin from "./main";
 
 export const VIEW_TYPE_EXAMPLE = "example-view";
 
 export class ExampleView extends ItemView {
   component: Component;
 
-  constructor(leaf: WorkspaceLeaf) {
+  constructor(leaf: WorkspaceLeaf, private plugin: DendronTreePlugin) {
     super(leaf);
   }
 
@@ -23,7 +24,7 @@ export class ExampleView extends ItemView {
     this.component = new Component({
       target: this.contentEl,
       props: {
-        variable: 1,
+        plugin: this.plugin,
       },
     });
   }

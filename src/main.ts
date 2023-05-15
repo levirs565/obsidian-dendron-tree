@@ -87,7 +87,7 @@ export default class DendronTreePlugin extends Plugin {
     // When registering intervals, this function will automatically clear the interval when the plugin is disabled.
     this.registerInterval(window.setInterval(() => console.log("setInterval"), 5 * 60 * 1000));
 
-    this.registerView(VIEW_TYPE_EXAMPLE, (leaf) => new ExampleView(leaf));
+    this.registerView(VIEW_TYPE_EXAMPLE, (leaf) => new ExampleView(leaf, this));
 
     this.addRibbonIcon("dice", "Activate view", () => {
       this.activateView();
