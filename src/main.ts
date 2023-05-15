@@ -8,7 +8,7 @@ import {
   PluginSettingTab,
   Setting,
 } from "obsidian";
-import { ExampleView, VIEW_TYPE_EXAMPLE } from "./src/view";
+import { ExampleView, VIEW_TYPE_EXAMPLE } from "./view";
 
 // Remember to rename these classes and interfaces!
 
