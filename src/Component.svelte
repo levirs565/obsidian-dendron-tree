@@ -1,12 +1,19 @@
 <script lang="ts">
-  import Note from "./Note.svelte";
-  import DendronTreePlugin from "./main";
-  import { createNoteTree } from "./note";
+  import { onDestroy } from "svelte/internal";
+  import NoteComponent from "./Note.svelte";
+  import { createNoteTree, Note } from "./note";
+  import { plugin } from "./store";
 
-  export let plugin: DendronTreePlugin;
+  let note: Note | undefined = undefined;
 
-  const root = plugin.app.vault.getRoot();
-  const note = createNoteTree(root);
+  const unsubscribe = plugin.subscribe((plugin) => {
+    const root = plugin.app.vault.getRoot();
+    note = createNoteTree(root);
+  });
+
+  onDestroy(unsubscribe);
 </script>
 
-<Note {note} />
+{#if note}
+  <NoteComponent {note} />
+{/if}

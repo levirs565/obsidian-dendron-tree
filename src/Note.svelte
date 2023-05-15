@@ -2,25 +2,44 @@
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
   import { Note } from "./note";
-  import { getIcon, getIconIds } from "obsidian";
+  import { TFile, getIcon, getIconIds } from "obsidian";
+  import { plugin } from "./store";
 
   export let note: Note;
 
   let isCollapsed = true;
 
-  function onClick(e: Event) {
-    isCollapsed = !isCollapsed;
-  }
-
   const icon: Action = function (node) {
     node.appendChild(getIcon("right-triangle")!);
   };
+
+  function openFile() {
+    const file = note.file;
+    if (!file || !(file instanceof TFile)) return;
+    plugin.update((plugin) => {
+      const leaf = plugin.app.workspace.getLeaf();
+      leaf.openFile(file);
+      return plugin;
+    });
+  }
 </script>
 
 <div class="tree-item is-clickable" class:is-collapsed={isCollapsed}>
-  <div class="tree-item-self is-clickable mod-collapsible" on:click={onClick}>
+  <div
+    class="tree-item-self is-clickable mod-collapsible"
+    on:click={() => {
+      openFile();
+      isCollapsed = false;
+    }}
+  >
     {#if note.children.length > 0}
-      <div class="tree-item-icon collapse-icon" use:icon />
+      <div
+        class="tree-item-icon collapse-icon"
+        use:icon
+        on:click|stopPropagation={() => {
+          isCollapsed = !isCollapsed;
+        }}
+      />
     {/if}
     <div class="tree-item-inner">
       {note.name}
