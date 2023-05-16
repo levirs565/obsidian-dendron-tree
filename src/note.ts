@@ -27,31 +27,36 @@ export function createNoteTree(folder: TFolder) {
 function getPathFromFileName(name: string) {
   const path = name.split(".");
   path.pop();
-  if (path.length === 1 && path[0] === "root") return [];
   return path;
+}
+
+function isRootPath(path: string[]) {
+  return path.length === 1 && path[0] === "root";
 }
 
 export function addNoteToTree(root: Note, file: TAbstractFile, sort: boolean) {
   const path = getPathFromFileName(file.name);
 
   let currentNote: Note = root;
-  while (path.length > 0) {
-    const name = path.shift()!;
-    let note: Note | undefined = currentNote.children.find((note) => note.name == name);
 
-    if (!note) {
-      note = {
-        name,
-        children: [],
-        parent: currentNote,
-        title: generateNoteTitle(name),
-      };
-      currentNote.children.push(note);
-      if (sort) sortNote(currentNote, false);
+  if (!isRootPath(path))
+    while (path.length > 0) {
+      const name = path.shift()!;
+      let note: Note | undefined = currentNote.children.find((note) => note.name == name);
+
+      if (!note) {
+        note = {
+          name,
+          children: [],
+          parent: currentNote,
+          title: generateNoteTitle(name),
+        };
+        currentNote.children.push(note);
+        if (sort) sortNote(currentNote, false);
+      }
+
+      currentNote = note;
     }
-
-    currentNote = note;
-  }
 
   currentNote.file = file;
 }
@@ -61,10 +66,13 @@ export function sortNote(note: Note, rescursive: boolean) {
   if (rescursive) note.children.forEach((child) => sortNote(child, rescursive));
 }
 
-function getNoteFromFile(root: Note, name: string) {
+export function getNoteFromFile(root: Note, name: string) {
   const path = getPathFromFileName(name);
 
+  if (isRootPath(path)) return root;
+
   let currentNote: Note | undefined = root;
+
   while (path.length > 0) {
     const name = path.shift()!;
     currentNote = currentNote?.children.find((note) => note.name == name);
@@ -107,6 +115,8 @@ export function getNotePath(note: Note) {
     component.unshift(current.name);
     current = current.parent;
   }
+
+  if (component.length == 0) component.push("root");
 
   return component.join(".");
 }

@@ -5,6 +5,8 @@
   import { Menu, TAbstractFile, TFile, getIcon } from "obsidian";
   import { getPlugin } from "./store";
   import path from "path";
+  import { openFile } from "./utils";
+  import { LookupModal, setPendingLookupQuery } from "./lookup";
 
   export let note: Note;
 
@@ -14,20 +16,12 @@
     node.appendChild(getIcon("right-triangle")!);
   };
 
-  function openFile(file: TAbstractFile | undefined | null) {
-    if (!file || !(file instanceof TFile)) return;
-    const plugin = getPlugin();
-    const leaf = plugin.app.workspace.getLeaf();
-    leaf.openFile(file);
-    return plugin;
-  }
-
   function createCurrentNote() {
     const path = getNotePath(note);
     console.log(generateNoteTitle(path));
     const plugin = getPlugin();
     createNote(plugin.app.vault, path, generateNoteTitle(path)).then((fileName) => {
-      openFile(plugin.app.vault.getAbstractFileByPath(fileName));
+      openFile(plugin.app, plugin.app.vault.getAbstractFileByPath(fileName));
     });
   }
 
@@ -35,6 +29,11 @@
     const plugin = getPlugin();
     if (!note.file) return;
     plugin.app.vault.delete(note.file);
+  }
+
+  function openLookup() {
+    setPendingLookupQuery(getNotePath(note));
+    new LookupModal(getPlugin().app).open();
   }
 
   function openMenu(e: MouseEvent) {
@@ -47,7 +46,7 @@
     }
 
     menu.addItem((item) => {
-      item.setTitle("Create New Note").setIcon("create-new");
+      item.setTitle("Create New Note").setIcon("plus").onClick(openLookup);
     });
 
     if (note.file)
@@ -63,7 +62,7 @@
   <div
     class="tree-item-self is-clickable mod-collapsible"
     on:click={() => {
-      openFile(note.file);
+      openFile(getPlugin().app, note.file);
       isCollapsed = false;
     }}
     on:contextmenu={openMenu}

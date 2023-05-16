@@ -6,3 +6,4 @@ export const plugin = writable<ExamplePlugin>();
 export const getPlugin = () => get(plugin);
 
 export const rootNote = writable<Note>();
+export const getRootNote = () => get(rootNote);
