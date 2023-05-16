@@ -1,12 +1,11 @@
 <script lang="ts">
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
-  import { Note, createNote, generateNoteTitle, getNotePath } from "./note";
-  import { Menu, TAbstractFile, TFile, getIcon } from "obsidian";
-  import { getPlugin } from "./store";
-  import path from "path";
-  import { openFile } from "./utils";
-  import { LookupModal, setPendingLookupQuery } from "./lookup";
+  import { Note, createNote, generateNoteTitle, getNotePath } from "../note";
+  import { Menu, getIcon } from "obsidian";
+  import { getPlugin } from "../store";
+  import { openFile } from "../utils";
+  import { LookupModal, setPendingLookupQuery } from "../lookup";
 
   export let note: Note;
 

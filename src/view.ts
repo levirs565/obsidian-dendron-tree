@@ -1,6 +1,6 @@
 import { ItemView, WorkspaceLeaf } from "obsidian";
 
-import Component from "./MainComponent.svelte";
+import Component from "./components/MainComponent.svelte";
 import DendronTreePlugin from "./main";
 import * as store from "./store";
 import { dendronActivityBarName } from "./icons";

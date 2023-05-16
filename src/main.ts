@@ -1,6 +1,5 @@
 import {
   App,
-  Notice,
   Plugin,
   PluginSettingTab,
   Setting,
