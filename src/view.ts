@@ -3,11 +3,13 @@ import { ItemView, WorkspaceLeaf } from "obsidian";
 import Component from "./MainComponent.svelte";
 import DendronTreePlugin from "./main";
 import * as store from "./store";
+import { dendronActivityBarName } from "./icons";
 
-export const VIEW_TYPE_DENDRON = "example-view";
+export const VIEW_TYPE_DENDRON = "dendron-tree-view";
 
 export class DendronView extends ItemView {
   component: Component;
+  icon = dendronActivityBarName;
 
   constructor(leaf: WorkspaceLeaf, private plugin: DendronTreePlugin) {
     super(leaf);
@@ -18,7 +20,7 @@ export class DendronView extends ItemView {
   }
 
   getDisplayText() {
-    return "Example view";
+    return "Dendron Tree";
   }
 
   async onOpen() {

@@ -1,10 +1,18 @@
-import { App, Notice, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile } from "obsidian";
+import {
+  App,
+  Notice,
+  Plugin,
+  PluginSettingTab,
+  Setting,
+  TAbstractFile,
+  TFile,
+  addIcon,
+} from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { rootNote } from "./store";
 import { addNoteToTree, createNoteTree, deleteNoteFromTree, updateNoteMetadata } from "./note";
 import { LookupModal } from "./lookup";
-
-// Remember to rename these classes and interfaces!
+import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 
 interface DendronTreePluginSettings {
   mySetting: string;
@@ -20,19 +28,8 @@ export default class DendronTreePlugin extends Plugin {
   async onload() {
     await this.loadSettings();
 
-    // This creates an icon in the left ribbon.
-    const ribbonIconEl = this.addRibbonIcon("dice", "Sample Plugin", (evt: MouseEvent) => {
-      // Called when the user clicks the icon.
-      new Notice("This is a notice!");
-    });
-    // Perform additional things with the ribbon
-    ribbonIconEl.addClass("my-plugin-ribbon-class");
+    addIcon(dendronActivityBarName, dendronActivityBarIcon);
 
-    // This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-    const statusBarItemEl = this.addStatusBarItem();
-    statusBarItemEl.setText("Status Bar Text");
-
-    // This adds a simple command that can be triggered anywhere
     this.addCommand({
       id: "dendron-lookup",
       name: "Lookup Note",
@@ -46,7 +43,7 @@ export default class DendronTreePlugin extends Plugin {
 
     this.registerView(VIEW_TYPE_DENDRON, (leaf) => new DendronView(leaf, this));
 
-    this.addRibbonIcon("dice", "Activate view", () => {
+    this.addRibbonIcon(dendronActivityBarName, "Open Dendron Tree", () => {
       this.activateView();
     });
 
