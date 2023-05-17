@@ -1,14 +1,6 @@
-import {
-  App,
-  Plugin,
-  PluginSettingTab,
-  Setting,
-  TAbstractFile,
-  TFile,
-  addIcon,
-} from "obsidian";
+import { App, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile, addIcon } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
-import { rootNote } from "./store";
+import { activeFile, rootNote } from "./store";
 import { addNoteToTree, createNoteTree, deleteNoteFromTree, updateNoteMetadata } from "./note";
 import { LookupModal } from "./lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
@@ -52,6 +44,7 @@ export default class DendronTreePlugin extends Plugin {
     this.app.vault.on("delete", this.onDeleteFile);
     this.app.vault.on("rename", this.onRenameFile);
     this.app.metadataCache.on("resolve", this.onResolveMetadata);
+    this.app.workspace.on("file-open", this.onOpenFile);
   }
 
   onunload() {
@@ -60,6 +53,7 @@ export default class DendronTreePlugin extends Plugin {
     this.app.vault.off("delete", this.onDeleteFile);
     this.app.vault.off("rename", this.onRenameFile);
     this.app.metadataCache.off("resolve", this.onResolveMetadata);
+    this.app.workspace.off("file-open", this.onOpenFile);
   }
 
   onCreateFile = (file: TAbstractFile) => {
@@ -88,6 +82,10 @@ export default class DendronTreePlugin extends Plugin {
 
       return note;
     });
+  };
+
+  onOpenFile = (file: TFile) => {
+    activeFile.set(file);
   };
 
   onResolveMetadata = (file: TFile) => {

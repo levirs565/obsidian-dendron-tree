@@ -3,13 +3,14 @@
   import { slide } from "svelte/transition";
   import { Note, createNote, generateNoteTitle, getNotePath } from "../note";
   import { Menu, getIcon } from "obsidian";
-  import { getPlugin } from "../store";
+  import { activeFile, getPlugin } from "../store";
   import { openFile } from "../utils";
   import { LookupModal, setPendingLookupQuery } from "../lookup";
 
   export let note: Note;
 
   let isCollapsed = true;
+  $: isActive = $activeFile === note.file;
 
   const icon: Action = function (node) {
     node.appendChild(getIcon("right-triangle")!);
@@ -59,7 +60,8 @@
 
 <div class="tree-item is-clickable" class:is-collapsed={isCollapsed}>
   <div
-    class="tree-item-self is-clickable mod-collapsible"
+    class="tree-item-self is-clickable mod-collapsible is-active"
+    class:is-active={isActive}
     on:click={() => {
       openFile(getPlugin().app, note.file);
       isCollapsed = false;
