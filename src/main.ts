@@ -1,7 +1,7 @@
 import { App, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile, addIcon } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, rootNote } from "./store";
-import { addNoteToTree, createNoteTree, deleteNoteFromTree, updateNoteMetadata } from "./note";
+import { NoteTree } from "./note";
 import { LookupModal } from "./lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 
@@ -15,6 +15,7 @@ const DEFAULT_SETTINGS: DendronTreePluginSettings = {
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
+  tree: NoteTree = new NoteTree();
 
   async onload() {
     await this.loadSettings();
@@ -26,7 +27,7 @@ export default class DendronTreePlugin extends Plugin {
       name: "Lookup Note",
       hotkeys: [{ modifiers: ["Ctrl"], key: "l" }],
       callback: () => {
-        new LookupModal(this.app).open();
+        new LookupModal(this).open();
       },
     });
 
@@ -38,7 +39,7 @@ export default class DendronTreePlugin extends Plugin {
       this.activateView();
     });
 
-    rootNote.set(createNoteTree(this.app.vault.getRoot()));
+    rootNote.set(this.tree.root);
 
     this.app.vault.on("create", this.onCreateFile);
     this.app.vault.on("delete", this.onDeleteFile);
@@ -56,31 +57,35 @@ export default class DendronTreePlugin extends Plugin {
     this.app.workspace.off("file-open", this.onOpenFile);
   }
 
+  isNoteFile(file: TAbstractFile): file is TFile {
+    return file instanceof TFile && file.extension === "md";
+  }
+
   onCreateFile = (file: TAbstractFile) => {
     rootNote.update((note) => {
-      if (file.name.endsWith(".md")) {
-        addNoteToTree(note, file, true);
+      if (this.isNoteFile(file)) {
+        this.tree.addFile(file, true);
       }
-      return note;
+      return this.tree.root;
     });
   };
 
   onDeleteFile = (file: TAbstractFile) => {
     rootNote.update((note) => {
-      if (file.name.endsWith(".md")) deleteNoteFromTree(note, file.name);
-      return note;
+      if (this.isNoteFile(file)) this.tree.deleteByFileName(file.name);
+      return this.tree.root;
     });
   };
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
     rootNote.update((note) => {
-      if (file.name.endsWith(".md")) {
+      if (this.isNoteFile(file)) {
         const oldName = oldPath.split("/").pop()!.split("\\").pop()!;
-        deleteNoteFromTree(note, oldName);
-        addNoteToTree(note, file, true);
+        this.tree.deleteByFileName(oldName);
+        this.tree.addFile(file, true);
       }
 
-      return note;
+      return this.tree.root;
     });
   };
 
@@ -90,10 +95,10 @@ export default class DendronTreePlugin extends Plugin {
 
   onResolveMetadata = (file: TFile) => {
     rootNote.update((note) => {
-      if (file.name.endsWith(".md")) {
-        updateNoteMetadata(note, file, this.app.metadataCache);
+      if (this.isNoteFile(file)) {
+        this.tree.updateMetadata(file, this.app.metadataCache);
       }
-      return note;
+      return this.tree.root;
     });
   };
 

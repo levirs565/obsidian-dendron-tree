@@ -33,7 +33,7 @@
 
   function openLookup() {
     setPendingLookupQuery(getNotePath(note));
-    new LookupModal(getPlugin().app).open();
+    new LookupModal(getPlugin()).open();
   }
 
   function openMenu(e: MouseEvent) {
@@ -80,6 +80,9 @@
     <div class="tree-item-inner">
       {note.title}
     </div>
+    {#if !note.file}
+      <div class="dendron-tree-not-found" />
+    {/if}
   </div>
   {#if note.children.length > 0 && !isCollapsed}
     <div class="tree-item-children" transition:slide={{ duration: 100 }}>
@@ -89,3 +92,15 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .dendron-tree-not-found {
+    background: rgb(var(--callout-warning));
+    width: var(--size-4-2);
+    height: var(--size-4-2);
+    border-radius: 100%;
+    flex-shrink: 0;
+    margin-left: var(--size-2-3);
+    align-self: center;
+  }
+</style>

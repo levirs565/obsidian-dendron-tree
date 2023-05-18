@@ -1,12 +1,7 @@
 import { SuggestModal, getIcon } from "obsidian";
 import { Note, createNote, generateNoteTitle, getNotePath } from "./note";
-import { getRootNote } from "./store";
 import { openFile } from "./utils";
-
-function* flattenNote(root: Note): Generator<Note> {
-  yield root;
-  for (const child of root.children) yield* flattenNote(child);
-}
+import DendronTreePlugin from "./main";
 
 let pendingQuery = "";
 
@@ -21,6 +16,10 @@ function usePendingLookupQuery() {
 }
 
 export class LookupModal extends SuggestModal<Note | null> {
+  constructor(private plugin: DendronTreePlugin) {
+    super(plugin.app);
+  }
+
   onOpen(): void {
     super.onOpen();
     const query = usePendingLookupQuery();
@@ -32,7 +31,7 @@ export class LookupModal extends SuggestModal<Note | null> {
 
   getSuggestions(query: string): (Note | null)[] {
     const queryLowercase = query.toLowerCase();
-    const notes = flattenNote(getRootNote());
+    const notes = this.plugin.tree.flatten();
     const result: (Note | null)[] = [];
     let foundExact = false;
     for (const note of notes) {

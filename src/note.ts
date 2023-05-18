@@ -1,27 +1,11 @@
-import { MetadataCache, TAbstractFile, TFile, TFolder, Vault } from "obsidian";
+import { MetadataCache, TFile, Vault } from "obsidian";
 
 export interface Note {
   name: string;
   children: Note[];
-  file?: TAbstractFile;
+  file?: TFile;
   parent?: Note;
   title: string;
-}
-
-export function createNoteTree(folder: TFolder) {
-  const root: Note = {
-    name: "root",
-    children: [],
-    title: "Root",
-  };
-  folder.children.forEach((file) => {
-    if (!file.name.endsWith(".md")) return;
-    addNoteToTree(root, file, false);
-  });
-
-  sortNote(root, true);
-
-  return root;
 }
 
 function getPathFromFileName(name: string) {
@@ -34,51 +18,9 @@ function isRootPath(path: string[]) {
   return path.length === 1 && path[0] === "root";
 }
 
-export function addNoteToTree(root: Note, file: TAbstractFile, sort: boolean) {
-  const path = getPathFromFileName(file.name);
-
-  let currentNote: Note = root;
-
-  if (!isRootPath(path))
-    while (path.length > 0) {
-      const name = path.shift()!;
-      let note: Note | undefined = currentNote.children.find((note) => note.name == name);
-
-      if (!note) {
-        note = {
-          name,
-          children: [],
-          parent: currentNote,
-          title: generateNoteTitle(name),
-        };
-        currentNote.children.push(note);
-        if (sort) sortNote(currentNote, false);
-      }
-
-      currentNote = note;
-    }
-
-  currentNote.file = file;
-}
-
-export function sortNote(note: Note, rescursive: boolean) {
+function sortNote(note: Note, rescursive: boolean) {
   note.children.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   if (rescursive) note.children.forEach((child) => sortNote(child, rescursive));
-}
-
-export function getNoteFromFile(root: Note, name: string) {
-  const path = getPathFromFileName(name);
-
-  if (isRootPath(path)) return root;
-
-  let currentNote: Note | undefined = root;
-
-  while (path.length > 0) {
-    const name = path.shift()!;
-    currentNote = currentNote?.children.find((note) => note.name == name);
-  }
-
-  return currentNote;
 }
 
 function removeBlankNote(startNote: Note) {
@@ -90,21 +32,9 @@ function removeBlankNote(startNote: Note) {
   }
 }
 
-export function deleteNoteFromTree(root: Note, name: string) {
-  const note = getNoteFromFile(root, name);
-  if (!note) return;
-
-  note.file = undefined;
-  if (note.children.length == 0) {
-    removeBlankNote(note);
-  }
-}
-
-export function updateNoteMetadata(root: Note, file: TFile, metadataCache: MetadataCache) {
-  const note = getNoteFromFile(root, file.name);
-  if (!note) return;
-  const cache = metadataCache.getFileCache(file);
-  note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
+function* flattenNote(root: Note): Generator<Note> {
+  yield root;
+  for (const child of root.children) yield* flattenNote(child);
 }
 
 export function getNotePath(note: Note) {
@@ -145,4 +75,75 @@ created: ${time}
   `;
   await vault.create(fileName, frontmatter);
   return fileName;
+}
+
+export class NoteTree {
+  root: Note = {
+    name: "root",
+    children: [],
+    title: "Root",
+  };
+
+  addFile(file: TFile, sort: boolean) {
+    const path = getPathFromFileName(file.name);
+
+    let currentNote: Note = this.root;
+
+    if (!isRootPath(path))
+      while (path.length > 0) {
+        const name = path.shift()!;
+        let note: Note | undefined = currentNote.children.find((note) => note.name == name);
+
+        if (!note) {
+          note = {
+            name,
+            children: [],
+            parent: currentNote,
+            title: generateNoteTitle(name),
+          };
+          currentNote.children.push(note);
+          if (sort) sortNote(currentNote, false);
+        }
+
+        currentNote = note;
+      }
+
+    currentNote.file = file;
+  }
+
+  getFromFileName(name: string) {
+    const path = getPathFromFileName(name);
+
+    if (isRootPath(path)) return this.root;
+
+    let currentNote: Note | undefined = this.root;
+
+    while (path.length > 0) {
+      const name = path.shift()!;
+      currentNote = currentNote?.children.find((note) => note.name == name);
+    }
+
+    return currentNote;
+  }
+
+  deleteByFileName(name: string) {
+    const note = this.getFromFileName(name);
+    if (!note) return;
+
+    note.file = undefined;
+    if (note.children.length == 0) {
+      removeBlankNote(note);
+    }
+  }
+
+  updateMetadata(file: TFile, metadataCache: MetadataCache) {
+    const note = this.getFromFileName(file.name);
+    if (!note) return;
+    const cache = metadataCache.getFileCache(file);
+    note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
+  }
+
+  flatten() {
+    return Array.from(flattenNote(this.root));
+  }
 }
