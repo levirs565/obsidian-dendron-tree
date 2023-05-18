@@ -39,7 +39,7 @@ export default class DendronTreePlugin extends Plugin {
       this.activateView();
     });
 
-    rootNote.set(this.tree.root);
+    this.updateNoteStore();
 
     this.app.vault.on("create", this.onCreateFile);
     this.app.vault.on("delete", this.onDeleteFile);
@@ -57,36 +57,35 @@ export default class DendronTreePlugin extends Plugin {
     this.app.workspace.off("file-open", this.onOpenFile);
   }
 
+  updateNoteStore() {
+    rootNote.set(this.tree.root);
+  }
+
   isNoteFile(file: TAbstractFile): file is TFile {
     return file instanceof TFile && file.extension === "md";
   }
 
   onCreateFile = (file: TAbstractFile) => {
-    rootNote.update((note) => {
-      if (this.isNoteFile(file)) {
-        this.tree.addFile(file, true);
-      }
-      return this.tree.root;
-    });
+    if (this.isNoteFile(file)) {
+      this.tree.addFile(file, true);
+      this.updateNoteStore();
+    }
   };
 
   onDeleteFile = (file: TAbstractFile) => {
-    rootNote.update((note) => {
-      if (this.isNoteFile(file)) this.tree.deleteByFileName(file.name);
-      return this.tree.root;
-    });
+    if (this.isNoteFile(file)) {
+      this.tree.deleteByFileName(file.name);
+      this.updateNoteStore();
+    }
   };
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
-    rootNote.update((note) => {
-      if (this.isNoteFile(file)) {
-        const oldName = oldPath.split("/").pop()!.split("\\").pop()!;
-        this.tree.deleteByFileName(oldName);
-        this.tree.addFile(file, true);
-      }
-
-      return this.tree.root;
-    });
+    if (this.isNoteFile(file)) {
+      const oldName = oldPath.split("/").pop()!.split("\\").pop()!;
+      this.tree.deleteByFileName(oldName);
+      this.tree.addFile(file, true);
+      this.updateNoteStore();
+    }
   };
 
   onOpenFile = (file: TFile) => {
@@ -94,12 +93,10 @@ export default class DendronTreePlugin extends Plugin {
   };
 
   onResolveMetadata = (file: TFile) => {
-    rootNote.update((note) => {
-      if (this.isNoteFile(file)) {
-        this.tree.updateMetadata(file, this.app.metadataCache);
-      }
-      return this.tree.root;
-    });
+    if (this.isNoteFile(file)) {
+      this.tree.updateMetadata(file, this.app.metadataCache);
+      this.updateNoteStore();
+    }
   };
 
   async activateView() {
