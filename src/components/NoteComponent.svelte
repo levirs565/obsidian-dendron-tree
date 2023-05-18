@@ -10,7 +10,7 @@
   export let note: Note;
 
   let isCollapsed = true;
-  $: isActive = $activeFile === note.file;
+  $: isActive = note.file && $activeFile === note.file;
 
   const icon: Action = function (node) {
     node.appendChild(getIcon("right-triangle")!);
