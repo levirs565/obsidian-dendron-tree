@@ -5,7 +5,7 @@
   import { Menu, getIcon } from "obsidian";
   import { activeFile, getPlugin } from "../store";
   import { openFile } from "../utils";
-  import { LookupModal, setPendingLookupQuery } from "../lookup";
+  import { LookupModal } from "../lookup";
 
   export let note: Note;
 
@@ -32,8 +32,7 @@
   }
 
   function openLookup() {
-    setPendingLookupQuery(getNotePath(note));
-    new LookupModal(getPlugin()).open();
+    new LookupModal(getPlugin(), getNotePath(note)).open();
   }
 
   function openMenu(e: MouseEvent) {

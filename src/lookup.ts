@@ -3,28 +3,15 @@ import { Note, createNote, generateNoteTitle, getNotePath } from "./note";
 import { openFile } from "./utils";
 import DendronTreePlugin from "./main";
 
-let pendingQuery = "";
-
-export function setPendingLookupQuery(q: string) {
-  pendingQuery = q;
-}
-
-function usePendingLookupQuery() {
-  const result = pendingQuery;
-  pendingQuery = "";
-  return result;
-}
-
 export class LookupModal extends SuggestModal<Note | null> {
-  constructor(private plugin: DendronTreePlugin) {
+  constructor(private plugin: DendronTreePlugin, private initialQuery: string = "") {
     super(plugin.app);
   }
 
   onOpen(): void {
     super.onOpen();
-    const query = usePendingLookupQuery();
-    if (query.length > 0) {
-      this.inputEl.value = query;
+    if (this.initialQuery.length > 0) {
+      this.inputEl.value = this.initialQuery;
       this.inputEl.dispatchEvent(new Event("input"));
     }
   }
