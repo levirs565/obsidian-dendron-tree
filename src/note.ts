@@ -9,9 +9,7 @@ export interface Note {
 }
 
 function getPathFromFileName(name: string) {
-  const path = name.split(".");
-  path.pop();
-  return path;
+  return name.split(".");
 }
 
 function isRootPath(path: string[]) {
@@ -85,7 +83,7 @@ export class NoteTree {
   };
 
   addFile(file: TFile, sort: boolean) {
-    const path = getPathFromFileName(file.name);
+    const path = getPathFromFileName(file.basename);
 
     let currentNote: Note = this.root;
 
@@ -137,7 +135,7 @@ export class NoteTree {
   }
 
   updateMetadata(file: TFile, metadataCache: MetadataCache) {
-    const note = this.getFromFileName(file.name);
+    const note = this.getFromFileName(file.basename);
     if (!note) return;
     const cache = metadataCache.getFileCache(file);
     note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);

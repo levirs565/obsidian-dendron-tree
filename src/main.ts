@@ -4,6 +4,7 @@ import { activeFile, rootNote } from "./store";
 import { NoteTree } from "./note";
 import { LookupModal } from "./lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
+import parsePath from "path-parse";
 
 interface DendronTreePluginSettings {
   mySetting: string;
@@ -69,15 +70,15 @@ export default class DendronTreePlugin extends Plugin {
 
   onDeleteFile = (file: TAbstractFile) => {
     if (this.isNoteFile(file)) {
-      this.tree.deleteByFileName(file.name);
+      this.tree.deleteByFileName(file.basename);
       this.updateNoteStore();
     }
   };
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
     if (this.isNoteFile(file)) {
-      const oldName = oldPath.split("/").pop()!.split("\\").pop()!;
-      this.tree.deleteByFileName(oldName);
+      const oldFile = parsePath(oldPath);
+      this.tree.deleteByFileName(oldFile.name);
       this.tree.addFile(file, true);
       this.updateNoteStore();
     }
