@@ -41,20 +41,15 @@ export default class DendronTreePlugin extends Plugin {
 
     this.updateNoteStore();
 
-    this.app.vault.on("create", this.onCreateFile);
-    this.app.vault.on("delete", this.onDeleteFile);
-    this.app.vault.on("rename", this.onRenameFile);
-    this.app.metadataCache.on("resolve", this.onResolveMetadata);
-    this.app.workspace.on("file-open", this.onOpenFile);
+    this.registerEvent(this.app.vault.on("create", this.onCreateFile));
+    this.registerEvent(this.app.vault.on("delete", this.onDeleteFile));
+    this.registerEvent(this.app.vault.on("rename", this.onRenameFile));
+    this.registerEvent(this.app.metadataCache.on("resolve", this.onResolveMetadata));
+    this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile));
   }
 
   onunload() {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DENDRON);
-    this.app.vault.off("create", this.onCreateFile);
-    this.app.vault.off("delete", this.onDeleteFile);
-    this.app.vault.off("rename", this.onRenameFile);
-    this.app.metadataCache.off("resolve", this.onResolveMetadata);
-    this.app.workspace.off("file-open", this.onOpenFile);
   }
 
   updateNoteStore() {
