@@ -5,7 +5,7 @@
   import { Menu, getIcon } from "obsidian";
   import { activeFile, getPlugin } from "../store";
   import { openFile } from "../utils";
-  import { LookupModal } from "../lookup";
+  import { LookupModal } from "../modal/lookup";
 
   export let note: Note;
 

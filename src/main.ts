@@ -11,10 +11,10 @@ import {
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, rootNote } from "./store";
 import { NoteTree, generateNoteTitle, getNoteTemplate } from "./note";
-import { LookupModal } from "./lookup";
+import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 import parsePath from "path-parse";
-import { InvalidRootModal } from "./invalid-root";
+import { InvalidRootModal } from "./modal/invalid-root";
 
 interface DendronTreePluginSettings {
   vaultPath: string;

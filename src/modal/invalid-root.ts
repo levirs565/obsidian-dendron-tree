@@ -1,5 +1,5 @@
 import { Modal, Setting } from "obsidian";
-import DendronTreePlugin from "./main";
+import DendronTreePlugin from "../main";
 
 export class InvalidRootModal extends Modal {
   constructor(private plugin: DendronTreePlugin) {

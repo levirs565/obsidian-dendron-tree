@@ -1,7 +1,7 @@
 import { SuggestModal, getIcon } from "obsidian";
-import { Note, getNotePath } from "./note";
-import { openFile } from "./utils";
-import DendronTreePlugin from "./main";
+import { Note, getNotePath } from "../note";
+import { openFile } from "../utils";
+import DendronTreePlugin from "../main";
 
 export class LookupModal extends SuggestModal<Note | null> {
   constructor(private plugin: DendronTreePlugin, private initialQuery: string = "") {
