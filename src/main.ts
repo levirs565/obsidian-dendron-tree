@@ -40,6 +40,10 @@ export default class DendronTreePlugin extends Plugin {
       this.activateView();
     });
 
+    for (const child of this.app.vault.getRoot().children)
+      if (this.isNoteFile(child)) this.tree.addFile(child, false);
+
+    this.tree.sort();
     this.updateNoteStore();
 
     this.registerEvent(this.app.vault.on("create", this.onCreateFile));

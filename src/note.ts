@@ -82,6 +82,10 @@ export class NoteTree {
     title: "Root",
   };
 
+  sort() {
+    sortNote(this.root, true);
+  }
+
   addFile(file: TFile, sort: boolean) {
     const path = getPathFromFileName(file.basename);
 
