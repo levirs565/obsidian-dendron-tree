@@ -35,6 +35,12 @@ function* flattenNote(root: Note): Generator<Note> {
   for (const child of root.children) yield* flattenNote(child);
 }
 
+function syncNoteMetadata(note: Note, metadataCache: MetadataCache) {
+  if (!note.file) return;
+  const cache = metadataCache.getFileCache(note.file);
+  note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
+}
+
 export function getNotePath(note: Note) {
   const component: string[] = [];
 
@@ -83,7 +89,7 @@ export class NoteTree {
     sortNote(this.root, true);
   }
 
-  addFile(file: TFile, sort: boolean) {
+  addFile(file: TFile, metadataCache: MetadataCache, sort: boolean) {
     const path = getPathFromFileName(file.basename);
 
     let currentNote: Note = this.root;
@@ -108,6 +114,7 @@ export class NoteTree {
       }
 
     currentNote.file = file;
+    syncNoteMetadata(currentNote, metadataCache);
   }
 
   getFromFileName(name: string) {
@@ -138,8 +145,7 @@ export class NoteTree {
   updateMetadata(file: TFile, metadataCache: MetadataCache) {
     const note = this.getFromFileName(file.basename);
     if (!note) return;
-    const cache = metadataCache.getFileCache(file);
-    note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
+    syncNoteMetadata(note, metadataCache);
   }
 
   flatten() {

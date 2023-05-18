@@ -98,7 +98,8 @@ export default class DendronTreePlugin extends Plugin {
 
     this.rootFolder = root;
 
-    for (const child of root.children) if (this.isNoteFile(child)) this.tree.addFile(child, false);
+    for (const child of root.children)
+      if (this.isNoteFile(child)) this.tree.addFile(child, this.app.metadataCache, false);
 
     this.tree.sort();
     this.updateNoteStore();
@@ -123,7 +124,7 @@ export default class DendronTreePlugin extends Plugin {
 
   onCreateFile = (file: TAbstractFile) => {
     if (this.isNoteFile(file)) {
-      this.tree.addFile(file, true);
+      this.tree.addFile(file, this.app.metadataCache, true);
       this.updateNoteStore();
     }
   };
@@ -145,7 +146,7 @@ export default class DendronTreePlugin extends Plugin {
       update = true;
     }
     if (this.isNoteFile(file)) {
-      this.tree.addFile(file, true);
+      this.tree.addFile(file, this.app.metadataCache, true);
       update = true;
     }
     if (update) this.updateNoteStore();
