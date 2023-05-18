@@ -15,11 +15,10 @@ export class InvalidRootModal extends Modal {
       button
         .setButtonText("Create")
         .setCta()
-        .onClick(() => {
-          this.plugin.createRootFolder().then(() => {
-            this.plugin.onRootFolderChanged();
-            this.close();
-          });
+        .onClick(async () => {
+          await this.plugin.createRootFolder();
+          this.plugin.onRootFolderChanged();
+          this.close();
         });
     });
   }

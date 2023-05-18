@@ -16,12 +16,11 @@
     node.appendChild(getIcon("right-triangle")!);
   };
 
-  function createCurrentNote() {
+  async function createCurrentNote() {
     const path = getNotePath(note);
     const plugin = getPlugin();
-    plugin.createNote(path).then((file) => {
-      openFile(plugin.app, file);
-    });
+    const file = await plugin.createNote(path);
+    openFile(plugin.app, file);
   }
 
   function deleteCurrentNote() {

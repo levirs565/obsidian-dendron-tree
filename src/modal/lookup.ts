@@ -54,15 +54,14 @@ export class LookupModal extends SuggestModal<Note | null> {
         el.append(getIcon("plus")!);
       });
   }
-  onChooseSuggestion(note: Note | null, evt: MouseEvent | KeyboardEvent) {
+  async onChooseSuggestion(note: Note | null, evt: MouseEvent | KeyboardEvent) {
     if (note && note.file) {
       openFile(this.app, note.file);
       return;
     }
 
     const path = note ? getNotePath(note) : this.inputEl.value;
-    this.plugin.createNote(path).then((file) => {
-      return openFile(this.app, file);
-    });
+    const file = await this.plugin.createNote(path);
+    return openFile(this.app, file);
   }
 }
