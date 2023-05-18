@@ -13,8 +13,8 @@ import { activeFile, rootNote } from "./store";
 import { NoteTree, generateNoteTitle, getNoteTemplate } from "./note";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
-import parsePath from "path-parse";
 import { InvalidRootModal } from "./modal/invalid-root";
+import { parsePath } from "./utils";
 
 interface DendronTreePluginSettings {
   vaultPath: string;
@@ -119,7 +119,7 @@ export default class DendronTreePlugin extends Plugin {
 
   isNotePath(parsed: ReturnType<typeof parsePath>) {
     const parent = this.getFolderFile(parsed.dir);
-    return parent instanceof TFolder && this.isNote({ parent, ext: parsed.ext.substring(1) });
+    return parent instanceof TFolder && this.isNote({ parent, ext: parsed.extension });
   }
 
   onCreateFile = (file: TAbstractFile) => {
@@ -133,7 +133,7 @@ export default class DendronTreePlugin extends Plugin {
     // file.parent is null when file is deleted
     const parsed = parsePath(file.path);
     if (this.isNotePath(parsed)) {
-      this.tree.deleteByFileName(parsed.name);
+      this.tree.deleteByFileName(parsed.basename);
       this.updateNoteStore();
     }
   };
@@ -142,7 +142,7 @@ export default class DendronTreePlugin extends Plugin {
     const oldParsed = parsePath(oldPath);
     let update = false;
     if (this.isNotePath(oldParsed)) {
-      this.tree.deleteByFileName(oldParsed.name);
+      this.tree.deleteByFileName(oldParsed.basename);
       update = true;
     }
     if (this.isNoteFile(file)) {
