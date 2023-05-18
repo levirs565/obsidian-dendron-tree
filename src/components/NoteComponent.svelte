@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
-  import { Note, createNote, generateNoteTitle, getNotePath } from "../note";
+  import { Note, getNotePath } from "../note";
   import { Menu, getIcon } from "obsidian";
   import { activeFile, getPlugin } from "../store";
   import { openFile } from "../utils";
@@ -18,10 +18,9 @@
 
   function createCurrentNote() {
     const path = getNotePath(note);
-    console.log(generateNoteTitle(path));
     const plugin = getPlugin();
-    createNote(plugin.app.vault, path, generateNoteTitle(path)).then((fileName) => {
-      openFile(plugin.app, plugin.app.vault.getAbstractFileByPath(fileName));
+    plugin.createNote(path).then((file) => {
+      openFile(plugin.app, file);
     });
   }
 

@@ -1,4 +1,4 @@
-import { MetadataCache, TFile, Vault } from "obsidian";
+import { MetadataCache, TFile } from "obsidian";
 
 export interface Note {
   name: string;
@@ -61,18 +61,15 @@ export function generateNoteTitle(path: string) {
     .join(" ");
 }
 
-export async function createNote(vault: Vault, path: string, title: string) {
-  const fileName = `${path}.md`;
+export function getNoteTemplate(title: string) {
   const time = new Date().getTime();
-  const frontmatter = `---
+  return `---
 title: "${title}"
 updated: ${time}
 created: ${time}
 ---
 
-  `;
-  await vault.create(fileName, frontmatter);
-  return fileName;
+`;
 }
 
 export class NoteTree {

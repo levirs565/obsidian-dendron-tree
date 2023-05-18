@@ -1,22 +1,33 @@
-import { App, Plugin, PluginSettingTab, Setting, TAbstractFile, TFile, addIcon } from "obsidian";
+import {
+  App,
+  Plugin,
+  PluginSettingTab,
+  Setting,
+  TAbstractFile,
+  TFile,
+  TFolder,
+  addIcon,
+} from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, rootNote } from "./store";
-import { NoteTree } from "./note";
+import { NoteTree, generateNoteTitle, getNoteTemplate } from "./note";
 import { LookupModal } from "./lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 import parsePath from "path-parse";
+import { InvalidRootModal } from "./invalid-root";
 
 interface DendronTreePluginSettings {
-  mySetting: string;
+  vaultPath: string;
 }
 
 const DEFAULT_SETTINGS: DendronTreePluginSettings = {
-  mySetting: "default",
+  vaultPath: "",
 };
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
-  tree: NoteTree = new NoteTree();
+  tree: NoteTree;
+  rootFolder: TFolder;
 
   async onload() {
     await this.loadSettings();
@@ -32,7 +43,7 @@ export default class DendronTreePlugin extends Plugin {
       },
     });
 
-    this.addSettingTab(new SampleSettingTab(this.app, this));
+    this.addSettingTab(new DendronTreeSettingTab(this.app, this));
 
     this.registerView(VIEW_TYPE_DENDRON, (leaf) => new DendronView(leaf, this));
 
@@ -40,11 +51,9 @@ export default class DendronTreePlugin extends Plugin {
       this.activateView();
     });
 
-    for (const child of this.app.vault.getRoot().children)
-      if (this.isNoteFile(child)) this.tree.addFile(child, false);
-
-    this.tree.sort();
-    this.updateNoteStore();
+    this.app.workspace.onLayoutReady(() => {
+      this.onRootFolderChanged();
+    });
 
     this.registerEvent(this.app.vault.on("create", this.onCreateFile));
     this.registerEvent(this.app.vault.on("delete", this.onDeleteFile));
@@ -57,12 +66,59 @@ export default class DendronTreePlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_DENDRON);
   }
 
+  async createNote(dendronPath: string) {
+    const path = `${this.settings.vaultPath}/${dendronPath}.md`;
+    const title = generateNoteTitle(dendronPath);
+    const template = getNoteTemplate(title);
+    return await this.app.vault.create(path, template);
+  }
+
+  async createRootFolder() {
+    return await this.app.vault.createFolder(this.settings.vaultPath);
+  }
+
+  getFolderFile(path: string) {
+    return path.length === 0
+      ? this.app.vault.getRoot()
+      : this.app.vault.getAbstractFileByPath(path);
+  }
+
+  onRootFolderChanged() {
+    const root = this.getFolderFile(this.settings.vaultPath);
+
+    if (this.rootFolder === root) return;
+
+    this.tree = new NoteTree();
+
+    if (!(root instanceof TFolder)) {
+      new InvalidRootModal(this).open();
+      this.updateNoteStore();
+      return;
+    }
+
+    this.rootFolder = root;
+
+    for (const child of root.children) if (this.isNoteFile(child)) this.tree.addFile(child, false);
+
+    this.tree.sort();
+    this.updateNoteStore();
+  }
+
   updateNoteStore() {
     rootNote.set(this.tree.root);
   }
 
+  isNote({ parent, ext }: { parent: TFolder | null; ext: string }) {
+    return parent === this.rootFolder && ext === "md";
+  }
+
   isNoteFile(file: TAbstractFile): file is TFile {
-    return file instanceof TFile && file.extension === "md";
+    return file instanceof TFile && this.isNote({ parent: file.parent, ext: file.extension });
+  }
+
+  isNotePath(parsed: ReturnType<typeof parsePath>) {
+    const parent = this.getFolderFile(parsed.dir);
+    return parent instanceof TFolder && this.isNote({ parent, ext: parsed.ext.substring(1) });
   }
 
   onCreateFile = (file: TAbstractFile) => {
@@ -73,19 +129,26 @@ export default class DendronTreePlugin extends Plugin {
   };
 
   onDeleteFile = (file: TAbstractFile) => {
-    if (this.isNoteFile(file)) {
-      this.tree.deleteByFileName(file.basename);
+    // file.parent is null when file is deleted
+    const parsed = parsePath(file.path);
+    if (this.isNotePath(parsed)) {
+      this.tree.deleteByFileName(parsed.name);
       this.updateNoteStore();
     }
   };
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
-    if (this.isNoteFile(file)) {
-      const oldFile = parsePath(oldPath);
-      this.tree.deleteByFileName(oldFile.name);
-      this.tree.addFile(file, true);
-      this.updateNoteStore();
+    const oldParsed = parsePath(oldPath);
+    let update = false;
+    if (this.isNotePath(oldParsed)) {
+      this.tree.deleteByFileName(oldParsed.name);
+      update = true;
     }
+    if (this.isNoteFile(file)) {
+      this.tree.addFile(file, true);
+      update = true;
+    }
+    if (update) this.updateNoteStore();
   };
 
   onOpenFile = (file: TFile) => {
@@ -122,7 +185,7 @@ export default class DendronTreePlugin extends Plugin {
   }
 }
 
-class SampleSettingTab extends PluginSettingTab {
+class DendronTreeSettingTab extends PluginSettingTab {
   plugin: DendronTreePlugin;
 
   constructor(app: App, plugin: DendronTreePlugin) {
@@ -135,20 +198,17 @@ class SampleSettingTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Settings for my awesome plugin." });
+    containerEl.createEl("h2", { text: "Dendron Tree Settting" });
 
-    new Setting(containerEl)
-      .setName("Setting #1")
-      .setDesc("It's a secret")
-      .addText((text) =>
-        text
-          .setPlaceholder("Enter your secret")
-          .setValue(this.plugin.settings.mySetting)
-          .onChange(async (value) => {
-            console.log("Secret: " + value);
-            this.plugin.settings.mySetting = value;
-            await this.plugin.saveSettings();
-          })
-      );
+    new Setting(containerEl).setName("Vault Path").addText((text) =>
+      text.setValue(this.plugin.settings.vaultPath).onChange(async (value) => {
+        this.plugin.settings.vaultPath = value;
+        await this.plugin.saveSettings();
+      })
+    );
+  }
+  hide() {
+    super.hide();
+    this.plugin.onRootFolderChanged();
   }
 }

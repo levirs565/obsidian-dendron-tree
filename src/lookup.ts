@@ -1,5 +1,5 @@
 import { SuggestModal, getIcon } from "obsidian";
-import { Note, createNote, generateNoteTitle, getNotePath } from "./note";
+import { Note, getNotePath } from "./note";
 import { openFile } from "./utils";
 import DendronTreePlugin from "./main";
 
@@ -61,9 +61,8 @@ export class LookupModal extends SuggestModal<Note | null> {
     }
 
     const path = note ? getNotePath(note) : this.inputEl.value;
-    const title = note ? note.title : generateNoteTitle(path);
-    createNote(this.app.vault, path, title).then((fileName) => {
-      return openFile(this.app, this.app.vault.getAbstractFileByPath(fileName));
+    this.plugin.createNote(path).then((file) => {
+      return openFile(this.app, file);
     });
   }
 }
