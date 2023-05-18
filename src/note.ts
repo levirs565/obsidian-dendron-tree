@@ -25,7 +25,7 @@ function sortNote(note: Note, rescursive: boolean) {
 
 function removeBlankNote(startNote: Note) {
   let note: Note | undefined = startNote;
-  while (note && note.parent && !note.file) {
+  while (note && note.parent && !note.file && note.children.length == 0) {
     const index = note.parent.children.indexOf(note);
     note.parent.children.splice(index, 1);
     note = note.parent;
