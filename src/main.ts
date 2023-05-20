@@ -62,9 +62,7 @@ export default class DendronTreePlugin extends Plugin {
     });
   }
 
-  onunload() {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_DENDRON);
-  }
+  onunload() {}
 
   async createNote(dendronPath: string) {
     const path = `${this.settings.vaultPath}/${dendronPath}.md`;
