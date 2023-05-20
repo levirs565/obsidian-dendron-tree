@@ -1,11 +1,11 @@
 {
-	"id": "dendron-tree",
-	"name": "Dendron Tree",
-	"version": "1.1.0",
-	"minAppVersion": "0.15.0",
-	"description": "This plugin add tree for exploring Dendron note.",
-	"author": "Levi Rizki Saputra",
-	"authorUrl": "https://www.levirs.my.id",
-	"fundingUrl": "https://www.paypal.me/levirs565",
-	"isDesktopOnly": false
+  "id": "dendron-tree",
+  "name": "Dendron Tree",
+  "version": "1.1.0",
+  "minAppVersion": "0.15.0",
+  "description": "Add tree for exploring Dendron note.",
+  "author": "Levi Rizki Saputra",
+  "authorUrl": "https://www.levirs.my.id",
+  "fundingUrl": "https://www.paypal.me/levirs565",
+  "isDesktopOnly": false
 }
