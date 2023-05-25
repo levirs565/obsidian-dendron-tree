@@ -41,6 +41,18 @@ function syncNoteMetadata(note: Note, metadataCache: MetadataCache) {
   note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
 }
 
+function createNote({ name, ...rest }: Note): Note {
+  return {
+    name: name.toLowerCase(),
+    ...rest,
+  };
+}
+
+function findChildren(parent: Note, name: string) {
+  const lower = name.toLowerCase();
+  return parent.children.find((note) => note.name == lower);
+}
+
 export function getNotePath(note: Note) {
   const component: string[] = [];
 
@@ -97,15 +109,15 @@ export class NoteTree {
     if (!isRootPath(path))
       while (path.length > 0) {
         const name = path.shift()!;
-        let note: Note | undefined = currentNote.children.find((note) => note.name == name);
+        let note: Note | undefined = findChildren(currentNote, name);
 
         if (!note) {
-          note = {
-            name,
+          note = createNote({
+            name: name,
             children: [],
             parent: currentNote,
             title: generateNoteTitle(name),
-          };
+          });
           currentNote.children.push(note);
           if (sort) sortNote(currentNote, false);
         }
@@ -122,11 +134,13 @@ export class NoteTree {
 
     if (isRootPath(path)) return this.root;
 
-    let currentNote: Note | undefined = this.root;
+    let currentNote: Note = this.root;
 
     while (path.length > 0) {
       const name = path.shift()!;
-      currentNote = currentNote?.children.find((note) => note.name == name);
+      const found = findChildren(currentNote, name);
+      if (!found) return undefined;
+      currentNote = found;
     }
 
     return currentNote;
