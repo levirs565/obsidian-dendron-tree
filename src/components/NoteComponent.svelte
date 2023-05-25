@@ -68,6 +68,7 @@
     {#if note.children.length > 0}
       <div
         class="tree-item-icon collapse-icon"
+        class:is-collapsed={isCollapsed}
         use:icon
         on:click|stopPropagation={() => {
           isCollapsed = !isCollapsed;
