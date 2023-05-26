@@ -1,28 +1,11 @@
-import {
-  App,
-  Plugin,
-  PluginSettingTab,
-  Setting,
-  TAbstractFile,
-  TFile,
-  TFolder,
-  addIcon,
-} from "obsidian";
+import { Plugin, TAbstractFile, TFile, TFolder, addIcon } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 import { parsePath } from "./utils";
 import { DendronVault } from "./dendron-vault";
-
-interface DendronTreePluginSettings {
-  vaultPath?: string;
-  vaultList: string[];
-}
-
-const DEFAULT_SETTINGS: DendronTreePluginSettings = {
-  vaultList: [""],
-};
+import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
@@ -155,57 +138,5 @@ export default class DendronTreePlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
-  }
-}
-
-class DendronTreeSettingTab extends PluginSettingTab {
-  plugin: DendronTreePlugin;
-
-  constructor(app: App, plugin: DendronTreePlugin) {
-    super(app, plugin);
-    this.plugin = plugin;
-  }
-
-  display(): void {
-    const { containerEl } = this;
-
-    containerEl.empty();
-
-    containerEl.createEl("h2", { text: "Dendron Tree Settting" });
-
-    new Setting(containerEl).setName("Vault List").setHeading();
-    for (const vault of this.plugin.settings.vaultList) {
-      new Setting(containerEl)
-        .setName(vault === "" ? "Root Folder" : `Folder: ${vault}`)
-        .addButton((btn) => {
-          btn.setButtonText("Remove").onClick(async () => {
-            this.plugin.settings.vaultList.remove(vault);
-            await this.plugin.saveSettings();
-            this.display();
-          });
-        });
-    }
-    let newVault = "";
-    new Setting(containerEl)
-      .setName("Directory: ")
-      .addText((text) => {
-        text.onChange((value) => {
-          newVault = value;
-        });
-      })
-      .addButton((btn) => {
-        btn.setButtonText("Add").onClick(async () => {
-          const list = this.plugin.settings.vaultList;
-          if (!list.includes(newVault)) {
-            list.push(newVault);
-            await this.plugin.saveSettings();
-          }
-          this.display();
-        });
-      });
-  }
-  hide() {
-    super.hide();
-    this.plugin.onRootFolderChanged();
   }
 }
