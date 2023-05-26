@@ -22,7 +22,7 @@
   async function createCurrentNote() {
     const path = note.getPath();
     const plugin = getPlugin();
-    const file = await plugin.createNote(path);
+    const file = await vault.createNote(path);
     openFile(plugin.app, file);
   }
 
