@@ -3,7 +3,7 @@ import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
-import { parsePath } from "./utils";
+import { getFolderFile, parsePath } from "./utils";
 import { DendronVault } from "./dendron-vault";
 import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
 
@@ -72,7 +72,7 @@ export default class DendronTreePlugin extends Plugin {
   }
 
   findVaultByParentPath(path: string): DendronVault | undefined {
-    const file = this.app.vault.getAbstractFileByPath(path);
+    const file = getFolderFile(this.app.vault, path);
     return file instanceof TFolder ? this.findVaultByParent(file) : undefined;
   }
 

@@ -1,7 +1,7 @@
 import { App, TAbstractFile, TFile, TFolder } from "obsidian";
 import { NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
 import { InvalidRootModal } from "./modal/invalid-root";
-import { ParsedPath } from "./utils";
+import { ParsedPath, getFolderFile } from "./utils";
 
 export class DendronVault {
   folder: TFolder;
@@ -19,7 +19,7 @@ export class DendronVault {
 
     this.tree = new NoteTree();
 
-    const root = this.getFolderFile(this.path);
+    const root = getFolderFile(this.app.vault, this.path);
     if (!(root instanceof TFolder)) {
       new InvalidRootModal(this).open();
       return;
@@ -49,12 +49,6 @@ export class DendronVault {
 
   isNote(extension: string) {
     return extension === "md";
-  }
-
-  getFolderFile(path: string) {
-    return path.length === 0
-      ? this.app.vault.getRoot()
-      : this.app.vault.getAbstractFileByPath(path);
   }
 
   onFileCreated(file: TAbstractFile): boolean {

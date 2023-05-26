@@ -1,4 +1,8 @@
-import { App, TAbstractFile, TFile } from "obsidian";
+import { App, TAbstractFile, TFile, Vault } from "obsidian";
+
+export function getFolderFile(vault: Vault, path: string) {
+  return path.length === 0 ? vault.getRoot() : vault.getAbstractFileByPath(path);
+}
 
 export function openFile(app: App, file: TAbstractFile | undefined | null) {
   if (!file || !(file instanceof TFile)) return;
