@@ -1,4 +1,5 @@
 import { MetadataCache, TFile } from "obsidian";
+import { generateUUID } from "./utils";
 
 export class Note {
   name: string;
@@ -88,7 +89,9 @@ export function generateNoteTitle(originalName: string, titlecase: boolean) {
 export function getNoteTemplate(title: string) {
   const time = new Date().getTime();
   return `---
-title: "${title}"
+id: ${generateUUID()}
+desc: ''
+title: ${title}
 updated: ${time}
 created: ${time}
 ---

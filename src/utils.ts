@@ -1,4 +1,5 @@
 import { App, TAbstractFile, TFile, Vault } from "obsidian";
+import { customAlphabet as nanoid } from "nanoid";
 
 export function getFolderFile(vault: Vault, path: string) {
   return path.length === 0 ? vault.getRoot() : vault.getAbstractFileByPath(path);
@@ -52,3 +53,6 @@ export function parsePath(path: string): ParsedPath {
     extension,
   };
 }
+
+const alphanumericLowercase = "0123456789abcdefghijklmnopqrstuvwxyz";
+export const generateUUID = nanoid(alphanumericLowercase, 23);
