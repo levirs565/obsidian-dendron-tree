@@ -102,7 +102,7 @@ export default class DendronTreePlugin extends Plugin {
 
     const newVault = this.findVaultByParent(file.parent);
     if (newVault) {
-      update = update || newVault.onFileCreated(file);
+      update = newVault.onFileCreated(file) || update;
     }
     if (update) this.updateNoteStore();
   };
