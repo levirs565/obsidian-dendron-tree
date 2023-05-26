@@ -118,8 +118,7 @@ export class NoteTree {
     let currentNote: Note = this.root;
 
     if (!NoteTree.isRootPath(path))
-      while (path.length > 0) {
-        const name = path.shift()!;
+      for (const name of path) {
         let note: Note | undefined = currentNote.findChildren(name);
 
         if (!note) {
@@ -142,8 +141,7 @@ export class NoteTree {
 
     let currentNote: Note = this.root;
 
-    while (path.length > 0) {
-      const name = path.shift()!;
+    for (const name of path) {
       const found = currentNote.findChildren(name);
       if (!found) return undefined;
       currentNote = found;

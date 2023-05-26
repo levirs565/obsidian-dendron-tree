@@ -65,13 +65,11 @@ export default class DendronTreePlugin extends Plugin {
   onunload() {}
 
   async createNote(baseName: string) {
-    const path = `${this.settings.vaultPath}/${baseName}.md`;
-    const title = generateNoteTitle(
-      NoteTree.getPathFromFileName(baseName).at(-1)!,
-      isUseTitleCase(baseName)
-    );
+    const filePath = `${this.settings.vaultPath}/${baseName}.md`;
+    const notePath = NoteTree.getPathFromFileName(baseName);
+    const title = generateNoteTitle(notePath[notePath.length - 1], isUseTitleCase(baseName));
     const template = getNoteTemplate(title);
-    return await this.app.vault.create(path, template);
+    return await this.app.vault.create(filePath, template);
   }
 
   async createRootFolder() {
