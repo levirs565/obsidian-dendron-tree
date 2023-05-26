@@ -1,5 +1,5 @@
 import { SuggestModal, getIcon } from "obsidian";
-import { Note, getNotePath } from "../note";
+import { Note } from "../note";
 import { openFile } from "../utils";
 import DendronTreePlugin from "../main";
 
@@ -22,7 +22,7 @@ export class LookupModal extends SuggestModal<Note | null> {
     const result: (Note | null)[] = [];
     let foundExact = false;
     for (const note of notes) {
-      const path = getNotePath(note);
+      const path = note.getPath();
       if (path === query) {
         foundExact = true;
         result.unshift(note);
@@ -30,7 +30,7 @@ export class LookupModal extends SuggestModal<Note | null> {
       }
       if (
         note.title.toLowerCase().includes(queryLowercase) ||
-        note.name.toLowerCase().includes(queryLowercase) ||
+        note.name.includes(queryLowercase) ||
         path.includes(queryLowercase)
       )
         result.push(note);
@@ -45,7 +45,7 @@ export class LookupModal extends SuggestModal<Note | null> {
     el.createEl("div", { cls: "suggestion-content" }, (el) => {
       el.createEl("div", { text: note?.title ?? "Create New", cls: "suggestion-title" });
       el.createEl("small", {
-        text: note ? getNotePath(note) : "Note does not exist",
+        text: note ? note.getPath() : "Note does not exist",
         cls: "suggestion-content",
       });
     });
@@ -60,7 +60,7 @@ export class LookupModal extends SuggestModal<Note | null> {
       return;
     }
 
-    const path = note ? getNotePath(note) : this.inputEl.value;
+    const path = note ? note.getPath() : this.inputEl.value;
     const file = await this.plugin.createNote(path);
     return openFile(this.app, file);
   }

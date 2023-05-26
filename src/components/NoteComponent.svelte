@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
-  import { Note, getNotePath } from "../note";
+  import { Note } from "../note";
   import { Menu, getIcon } from "obsidian";
   import { activeFile, getPlugin } from "../store";
   import { openFile } from "../utils";
@@ -17,7 +17,7 @@
   };
 
   async function createCurrentNote() {
-    const path = getNotePath(note);
+    const path = note.getPath();
     const plugin = getPlugin();
     const file = await plugin.createNote(path);
     openFile(plugin.app, file);
@@ -30,7 +30,7 @@
   }
 
   function openLookup() {
-    new LookupModal(getPlugin(), getNotePath(note)).open();
+    new LookupModal(getPlugin(), note.getPath()).open();
   }
 
   function openMenu(e: MouseEvent) {

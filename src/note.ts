@@ -1,70 +1,59 @@
 import { MetadataCache, TFile } from "obsidian";
 
-export interface Note {
+export class Note {
   name: string;
-  children: Note[];
+  children: Note[] = [];
   file?: TFile;
   parent?: Note;
-  title: string;
-}
+  title = "";
 
-function getPathFromFileName(name: string) {
-  return name.split(".");
-}
-
-function isRootPath(path: string[]) {
-  return path.length === 1 && path[0] === "root";
-}
-
-function sortNote(note: Note, rescursive: boolean) {
-  note.children.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
-  if (rescursive) note.children.forEach((child) => sortNote(child, rescursive));
-}
-
-function removeBlankNote(startNote: Note) {
-  let note: Note | undefined = startNote;
-  while (note && note.parent && !note.file && note.children.length == 0) {
-    const index = note.parent.children.indexOf(note);
-    note.parent.children.splice(index, 1);
-    note = note.parent;
-  }
-}
-
-function* flattenNote(root: Note): Generator<Note> {
-  yield root;
-  for (const child of root.children) yield* flattenNote(child);
-}
-
-function syncNoteMetadata(note: Note, metadataCache: MetadataCache) {
-  if (!note.file) return;
-  const cache = metadataCache.getFileCache(note.file);
-  note.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(note.name);
-}
-
-function createNote({ name, ...rest }: Note): Note {
-  return {
-    name: name.toLowerCase(),
-    ...rest,
-  };
-}
-
-function findChildren(parent: Note, name: string) {
-  const lower = name.toLowerCase();
-  return parent.children.find((note) => note.name == lower);
-}
-
-export function getNotePath(note: Note) {
-  const component: string[] = [];
-
-  let current: Note | undefined = note;
-  while (current && current.name !== "root") {
-    component.unshift(current.name);
-    current = current.parent;
+  constructor(name: string) {
+    this.name = name.toLowerCase();
+    this.title = generateNoteTitle(this.name);
   }
 
-  if (component.length == 0) component.push("root");
+  appendChild(note: Note) {
+    if (note.parent) throw Error("Note has parent");
+    note.parent = this;
+    this.children.push(note);
+  }
 
-  return component.join(".");
+  removeChildren(note: Note) {
+    note.parent = undefined;
+    const index = this.children.indexOf(note);
+    this.children.splice(index, 1);
+  }
+
+  findChildren(name: string) {
+    const lower = name.toLowerCase();
+    return this.children.find((note) => note.name == lower);
+  }
+
+  sortChildren(rescursive: boolean) {
+    this.children.sort((a, b) => a.name.localeCompare(b.name));
+    if (rescursive) this.children.forEach((child) => child.sortChildren(rescursive));
+  }
+
+  getPath() {
+    const component: string[] = [];
+
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let current: Note | undefined = this;
+    while (current && current.name !== "root") {
+      component.unshift(current.name);
+      current = current.parent;
+    }
+
+    if (component.length == 0) component.push("root");
+
+    return component.join(".");
+  }
+
+  syncMetadata(metadataCache: MetadataCache) {
+    if (!this.file) return;
+    const cache = metadataCache.getFileCache(this.file);
+    this.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(this.name);
+  }
 }
 
 export function generateNoteTitle(path: string) {
@@ -91,54 +80,53 @@ created: ${time}
 }
 
 export class NoteTree {
-  root: Note = {
-    name: "root",
-    children: [],
-    title: "Root",
-  };
+  root: Note = new Note("root");
 
   sort() {
-    sortNote(this.root, true);
+    this.root.sortChildren(true);
+  }
+
+  private static getPathFromFileName(name: string) {
+    return name.split(".");
+  }
+
+  private static isRootPath(path: string[]) {
+    return path.length === 1 && path[0] === "root";
   }
 
   addFile(file: TFile, metadataCache: MetadataCache, sort: boolean) {
-    const path = getPathFromFileName(file.basename);
+    const path = NoteTree.getPathFromFileName(file.basename);
 
     let currentNote: Note = this.root;
 
-    if (!isRootPath(path))
+    if (!NoteTree.isRootPath(path))
       while (path.length > 0) {
         const name = path.shift()!;
-        let note: Note | undefined = findChildren(currentNote, name);
+        let note: Note | undefined = currentNote.findChildren(name);
 
         if (!note) {
-          note = createNote({
-            name: name,
-            children: [],
-            parent: currentNote,
-            title: generateNoteTitle(name),
-          });
-          currentNote.children.push(note);
-          if (sort) sortNote(currentNote, false);
+          note = new Note(name);
+          currentNote.appendChild(note);
+          if (sort) currentNote.sortChildren(false);
         }
 
         currentNote = note;
       }
 
     currentNote.file = file;
-    syncNoteMetadata(currentNote, metadataCache);
+    currentNote.syncMetadata(metadataCache);
   }
 
   getFromFileName(name: string) {
-    const path = getPathFromFileName(name);
+    const path = NoteTree.getPathFromFileName(name);
 
-    if (isRootPath(path)) return this.root;
+    if (NoteTree.isRootPath(path)) return this.root;
 
     let currentNote: Note = this.root;
 
     while (path.length > 0) {
       const name = path.shift()!;
-      const found = findChildren(currentNote, name);
+      const found = currentNote.findChildren(name);
       if (!found) return undefined;
       currentNote = found;
     }
@@ -152,17 +140,32 @@ export class NoteTree {
 
     note.file = undefined;
     if (note.children.length == 0) {
-      removeBlankNote(note);
+      let currentNote: Note | undefined = note;
+      while (
+        currentNote &&
+        currentNote.parent &&
+        !currentNote.file &&
+        currentNote.children.length == 0
+      ) {
+        const parent: Note | undefined = currentNote.parent;
+        parent.removeChildren(currentNote);
+        currentNote = parent;
+      }
     }
   }
 
   updateMetadata(file: TFile, metadataCache: MetadataCache) {
     const note = this.getFromFileName(file.basename);
     if (!note) return;
-    syncNoteMetadata(note, metadataCache);
+    note.syncMetadata(metadataCache);
+  }
+
+  private static *flattenInternal(root: Note): Generator<Note> {
+    yield root;
+    for (const child of root.children) yield* this.flattenInternal(child);
   }
 
   flatten() {
-    return Array.from(flattenNote(this.root));
+    return Array.from(NoteTree.flattenInternal(this.root));
   }
 }
