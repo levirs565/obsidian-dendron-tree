@@ -17,11 +17,12 @@ import { InvalidRootModal } from "./modal/invalid-root";
 import { parsePath } from "./utils";
 
 interface DendronTreePluginSettings {
-  vaultPath: string;
+  vaultPath?: string;
+  vaultList: string[];
 }
 
 const DEFAULT_SETTINGS: DendronTreePluginSettings = {
-  vaultPath: "",
+  vaultList: [""],
 };
 
 export default class DendronTreePlugin extends Plugin {
@@ -31,6 +32,11 @@ export default class DendronTreePlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
+    if (this.settings.vaultPath) {
+      this.settings.vaultList = [this.settings.vaultPath];
+      this.settings.vaultPath = undefined;
+      await this.saveSettings();
+    }
 
     addIcon(dendronActivityBarName, dendronActivityBarIcon);
 
@@ -200,12 +206,36 @@ class DendronTreeSettingTab extends PluginSettingTab {
 
     containerEl.createEl("h2", { text: "Dendron Tree Settting" });
 
-    new Setting(containerEl).setName("Vault Path").addText((text) =>
-      text.setValue(this.plugin.settings.vaultPath).onChange(async (value) => {
-        this.plugin.settings.vaultPath = value;
-        await this.plugin.saveSettings();
+    new Setting(containerEl).setName("Vault List").setHeading();
+    for (const vault of this.plugin.settings.vaultList) {
+      new Setting(containerEl)
+        .setName(vault === "" ? "Root Folder" : `Folder: ${vault}`)
+        .addButton((btn) => {
+          btn.setButtonText("Remove").onClick(async () => {
+            this.plugin.settings.vaultList.remove(vault);
+            await this.plugin.saveSettings();
+            this.display();
+          });
+        });
+    }
+    let newVault = "";
+    new Setting(containerEl)
+      .setName("Directory: ")
+      .addText((text) => {
+        text.onChange((value) => {
+          newVault = value;
+        });
       })
-    );
+      .addButton((btn) => {
+        btn.setButtonText("Add").onClick(async () => {
+          const list = this.plugin.settings.vaultList;
+          if (!list.includes(newVault)) {
+            list.push(newVault);
+            await this.plugin.saveSettings();
+          }
+          this.display();
+        });
+      });
   }
   hide() {
     super.hide();
