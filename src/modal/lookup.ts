@@ -64,9 +64,7 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
       el.createEl("small", {
         text: item
           ? item.note.getPath() +
-            (this.plugin.vaultList.length > 1
-              ? ` (${item.vault.path === "" ? "/" : item.vault.path})`
-              : "")
+            (this.plugin.vaultList.length > 1 ? ` (${item.vault.formattedPath})` : "")
           : "Note does not exist",
         cls: "suggestion-content",
       });

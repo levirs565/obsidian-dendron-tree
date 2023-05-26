@@ -14,7 +14,7 @@ export class SelectVaultModal extends SuggestModal<DendronVault> {
     );
   }
   renderSuggestion(value: DendronVault, el: HTMLElement) {
-    el.createEl("div", { text: value.path === "" ? "/" : value.path });
+    el.createEl("div", { text: value.formattedPath });
   }
   onChooseSuggestion(item: DendronVault, evt: MouseEvent | KeyboardEvent) {
     this.onSelected(item);

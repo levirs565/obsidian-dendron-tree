@@ -10,6 +10,10 @@ export class DendronVault {
 
   constructor(public app: App, public path: string) {}
 
+  get formattedPath() {
+    return this.path === "" ? "/" : this.path;
+  }
+
   init() {
     if (this.isIniatialized) return;
 
