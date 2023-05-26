@@ -3,11 +3,14 @@
   import { slide } from "svelte/transition";
   import { Note } from "../note";
   import { Menu, getIcon } from "obsidian";
-  import { activeFile, getPlugin } from "../store";
+  import { activeFile, getPlugin, showVaultPath } from "../store";
   import { openFile } from "../utils";
   import { LookupModal } from "../modal/lookup";
+  import { DendronVault } from "src/dendron-vault";
 
   export let note: Note;
+  export let isRoot: boolean = false;
+  export let vault: DendronVault;
 
   let isCollapsed = true;
   $: isActive = note.file && $activeFile === note.file;
@@ -76,7 +79,7 @@
       />
     {/if}
     <div class="tree-item-inner">
-      {note.title}
+      {note.title + (isRoot && $showVaultPath ? ` (${vault.path === "" ? "/" : vault.path})` : "")}
     </div>
     {#if !note.file}
       <div class="dendron-tree-not-found" />
@@ -85,7 +88,7 @@
   {#if note.children.length > 0 && !isCollapsed}
     <div class="tree-item-children" transition:slide={{ duration: 100 }}>
       {#each note.children as child (child.name)}
-        <svelte:self note={child} />
+        <svelte:self note={child} {vault} />
       {/each}
     </div>
   {/if}

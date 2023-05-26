@@ -1,8 +1,10 @@
 <script lang="ts">
   import NoteComponent from "./NoteComponent.svelte";
-  import { rootNote } from "../store";
+  import { dendronVaultList } from "../store";
 </script>
 
-{#if $rootNote}
-  <NoteComponent note={$rootNote} />
-{/if}
+<div>
+  {#each $dendronVaultList as vault (vault.path)}
+    <NoteComponent note={vault.tree.root} isRoot {vault} />
+  {/each}
+</div>

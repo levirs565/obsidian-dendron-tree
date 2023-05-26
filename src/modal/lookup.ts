@@ -18,7 +18,7 @@ export class LookupModal extends SuggestModal<Note | null> {
 
   getSuggestions(query: string): (Note | null)[] {
     const queryLowercase = query.toLowerCase();
-    const notes = this.plugin.tree.flatten();
+    const notes = this.plugin.vaultList[0].tree.flatten();
     const result: (Note | null)[] = [];
     let foundExact = false;
     for (const note of notes) {

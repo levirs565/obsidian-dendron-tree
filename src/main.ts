@@ -9,12 +9,12 @@ import {
   addIcon,
 } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
-import { activeFile, rootNote } from "./store";
+import { activeFile, dendronVaultList } from "./store";
 import { NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
-import { InvalidRootModal } from "./modal/invalid-root";
 import { parsePath } from "./utils";
+import { DendronVault } from "./dendron-vault";
 
 interface DendronTreePluginSettings {
   vaultPath?: string;
@@ -27,8 +27,7 @@ const DEFAULT_SETTINGS: DendronTreePluginSettings = {
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
-  tree: NoteTree;
-  rootFolder: TFolder;
+  vaultList: DendronVault[] = [];
 
   async onload() {
     await this.loadSettings();
@@ -78,58 +77,34 @@ export default class DendronTreePlugin extends Plugin {
     return await this.app.vault.create(filePath, template);
   }
 
-  async createRootFolder() {
-    return await this.app.vault.createFolder(this.settings.vaultPath);
-  }
-
-  getFolderFile(path: string) {
-    return path.length === 0
-      ? this.app.vault.getRoot()
-      : this.app.vault.getAbstractFileByPath(path);
-  }
-
   onRootFolderChanged() {
-    const root = this.getFolderFile(this.settings.vaultPath);
-
-    if (this.rootFolder === root) return;
-
-    this.tree = new NoteTree();
-
-    if (!(root instanceof TFolder)) {
-      new InvalidRootModal(this).open();
-      this.updateNoteStore();
-      return;
+    this.vaultList = this.settings.vaultList.map((path) => {
+      return (
+        this.vaultList.find((vault) => vault.path === path) ?? new DendronVault(this.app, path)
+      );
+    });
+    for (const vault of this.vaultList) {
+      vault.init();
     }
-
-    this.rootFolder = root;
-
-    for (const child of root.children)
-      if (this.isNoteFile(child)) this.tree.addFile(child, this.app.metadataCache, false);
-
-    this.tree.sort();
     this.updateNoteStore();
   }
 
   updateNoteStore() {
-    rootNote.set(this.tree.root);
+    dendronVaultList.set(this.vaultList);
   }
 
-  isNote({ parent, ext }: { parent: TFolder | null; ext: string }) {
-    return parent === this.rootFolder && ext === "md";
+  findVaultByParent(parent: TFolder | null): DendronVault | undefined {
+    return this.vaultList.find((vault) => vault.folder === parent);
   }
 
-  isNoteFile(file: TAbstractFile): file is TFile {
-    return file instanceof TFile && this.isNote({ parent: file.parent, ext: file.extension });
-  }
-
-  isNotePath(parsed: ReturnType<typeof parsePath>) {
-    const parent = this.getFolderFile(parsed.dir);
-    return parent instanceof TFolder && this.isNote({ parent, ext: parsed.extension });
+  findVaultByParentPath(path: string): DendronVault | undefined {
+    const file = this.app.vault.getAbstractFileByPath(path);
+    return file instanceof TFolder ? this.findVaultByParent(file) : undefined;
   }
 
   onCreateFile = (file: TAbstractFile) => {
-    if (this.isNoteFile(file)) {
-      this.tree.addFile(file, this.app.metadataCache, true);
+    const vault = this.findVaultByParent(file.parent);
+    if (vault && vault.onFileCreated(file)) {
       this.updateNoteStore();
     }
   };
@@ -137,22 +112,23 @@ export default class DendronTreePlugin extends Plugin {
   onDeleteFile = (file: TAbstractFile) => {
     // file.parent is null when file is deleted
     const parsed = parsePath(file.path);
-    if (this.isNotePath(parsed)) {
-      this.tree.deleteByFileName(parsed.basename);
+    const vault = this.findVaultByParentPath(parsed.dir);
+    if (vault && vault.onFileDeleted(parsed)) {
       this.updateNoteStore();
     }
   };
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
     const oldParsed = parsePath(oldPath);
+    const oldVault = this.findVaultByParentPath(oldParsed.dir);
     let update = false;
-    if (this.isNotePath(oldParsed)) {
-      this.tree.deleteByFileName(oldParsed.basename);
-      update = true;
+    if (oldVault) {
+      update = oldVault.onFileDeleted(oldParsed);
     }
-    if (this.isNoteFile(file)) {
-      this.tree.addFile(file, this.app.metadataCache, true);
-      update = true;
+
+    const newVault = this.findVaultByParent(file.parent);
+    if (newVault) {
+      update = update || newVault.onFileCreated(file);
     }
     if (update) this.updateNoteStore();
   };
@@ -162,8 +138,8 @@ export default class DendronTreePlugin extends Plugin {
   };
 
   onResolveMetadata = (file: TFile) => {
-    if (this.isNoteFile(file)) {
-      this.tree.updateMetadata(file, this.app.metadataCache);
+    const vault = this.findVaultByParent(file.parent);
+    if (vault && vault.onMetadataChanged(file)) {
       this.updateNoteStore();
     }
   };

@@ -1,23 +1,23 @@
 import { Modal, Setting } from "obsidian";
-import DendronTreePlugin from "../main";
+import { DendronVault } from "src/dendron-vault";
 
 export class InvalidRootModal extends Modal {
-  constructor(private plugin: DendronTreePlugin) {
-    super(plugin.app);
+  constructor(private dendronVault: DendronVault) {
+    super(dendronVault.app);
   }
 
   onOpen(): void {
     this.contentEl.createEl("h1", { text: "Invalid Root" });
     this.contentEl.createEl("p", {
-      text: `"${this.plugin.settings.vaultPath}" is not folder. Do you want to create this folder?`,
+      text: `"${this.dendronVault.path}" is not folder. Do you want to create this folder?`,
     });
     new Setting(this.contentEl).addButton((button) => {
       button
         .setButtonText("Create")
         .setCta()
         .onClick(async () => {
-          await this.plugin.createRootFolder();
-          this.plugin.onRootFolderChanged();
+          await this.dendronVault.createRootFolder();
+          this.dendronVault.init();
           this.close();
         });
     });
