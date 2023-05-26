@@ -1,5 +1,5 @@
 import { App, TAbstractFile, TFile, TFolder } from "obsidian";
-import { NoteTree } from "./note";
+import { NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
 import { InvalidRootModal } from "./modal/invalid-root";
 import { ParsedPath } from "./utils";
 
@@ -33,6 +33,14 @@ export class DendronVault {
 
   async createRootFolder() {
     return await this.app.vault.createFolder(this.path);
+  }
+
+  async createNote(baseName: string) {
+    const filePath = `${this.path}/${baseName}.md`;
+    const notePath = NoteTree.getPathFromFileName(baseName);
+    const title = generateNoteTitle(notePath[notePath.length - 1], isUseTitleCase(baseName));
+    const template = getNoteTemplate(title);
+    return await this.app.vault.create(filePath, template);
   }
 
   isNote(extension: string) {
