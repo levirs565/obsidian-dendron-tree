@@ -7,9 +7,9 @@ export class Note {
   parent?: Note;
   title = "";
 
-  constructor(name: string) {
-    this.name = name.toLowerCase();
-    this.title = generateNoteTitle(this.name);
+  constructor(private originalName: string, private titlecase: boolean) {
+    this.name = originalName.toLowerCase();
+    this.title = generateNoteTitle(this.originalName, this.titlecase);
   }
 
   appendChild(note: Note) {
@@ -52,13 +52,30 @@ export class Note {
   syncMetadata(metadataCache: MetadataCache) {
     if (!this.file) return;
     const cache = metadataCache.getFileCache(this.file);
-    this.title = cache?.frontmatter?.["title"] ?? generateNoteTitle(this.name);
+    this.title =
+      cache?.frontmatter?.["title"] ?? generateNoteTitle(this.originalName, this.titlecase);
   }
 }
 
-export function generateNoteTitle(path: string) {
-  return path
-    .substring(path.lastIndexOf(".") + 1)
+/**
+ * Check whetever generated note title must be title case or not
+ * @param baseName file base name
+ */
+
+export function isUseTitleCase(baseName: string) {
+  return baseName.toLowerCase() === baseName;
+}
+
+/**
+ * Generate title for note
+ * @param originalName name of note before lowercased (not filename)
+ * @param titlecase use title case or use original name
+ * @returns title for note
+ */
+
+export function generateNoteTitle(originalName: string, titlecase: boolean) {
+  if (!titlecase) return originalName;
+  return originalName
     .split("-")
     .map((item) => item.trim())
     .filter((item) => item.length > 0)
@@ -80,13 +97,13 @@ created: ${time}
 }
 
 export class NoteTree {
-  root: Note = new Note("root");
+  root: Note = new Note("root", true);
 
   sort() {
     this.root.sortChildren(true);
   }
 
-  private static getPathFromFileName(name: string) {
+  public static getPathFromFileName(name: string) {
     return name.split(".");
   }
 
@@ -95,6 +112,7 @@ export class NoteTree {
   }
 
   addFile(file: TFile, metadataCache: MetadataCache, sort: boolean) {
+    const titlecase = isUseTitleCase(file.basename);
     const path = NoteTree.getPathFromFileName(file.basename);
 
     let currentNote: Note = this.root;
@@ -105,7 +123,7 @@ export class NoteTree {
         let note: Note | undefined = currentNote.findChildren(name);
 
         if (!note) {
-          note = new Note(name);
+          note = new Note(name, titlecase);
           currentNote.appendChild(note);
           if (sort) currentNote.sortChildren(false);
         }

@@ -10,7 +10,7 @@ import {
 } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, rootNote } from "./store";
-import { NoteTree, generateNoteTitle, getNoteTemplate } from "./note";
+import { NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 import { InvalidRootModal } from "./modal/invalid-root";
@@ -64,9 +64,12 @@ export default class DendronTreePlugin extends Plugin {
 
   onunload() {}
 
-  async createNote(dendronPath: string) {
-    const path = `${this.settings.vaultPath}/${dendronPath}.md`;
-    const title = generateNoteTitle(dendronPath);
+  async createNote(baseName: string) {
+    const path = `${this.settings.vaultPath}/${baseName}.md`;
+    const title = generateNoteTitle(
+      NoteTree.getPathFromFileName(baseName).at(-1)!,
+      isUseTitleCase(baseName)
+    );
     const template = getNoteTemplate(title);
     return await this.app.vault.create(path, template);
   }
