@@ -3,9 +3,10 @@ import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
-import { getFolderFile, parsePath } from "./utils";
+import { getFolderFile } from "./utils";
 import { DendronVault } from "./dendron-vault";
 import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
+import { parsePath } from "./path";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;

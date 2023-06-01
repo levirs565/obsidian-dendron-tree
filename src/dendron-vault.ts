@@ -1,7 +1,8 @@
 import { App, TAbstractFile, TFile, TFolder } from "obsidian";
 import { NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
 import { InvalidRootModal } from "./modal/invalid-root";
-import { ParsedPath, getFolderFile } from "./utils";
+import { getFolderFile } from "./utils";
+import { ParsedPath } from "./path";
 
 export class DendronVault {
   folder: TFolder;
