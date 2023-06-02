@@ -80,7 +80,10 @@ export class DendronVault {
   onFileDeleted(parsed: ParsedPath): boolean {
     if (!this.isNote(parsed.extension)) return false;
 
-    this.tree.deleteByFileName(parsed.basename);
+    const note = this.tree.deleteByFileName(parsed.basename);
+    if (note?.parent) {
+      note.syncMetadata(undefined);
+    }
     return true;
   }
 }

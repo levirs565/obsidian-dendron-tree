@@ -172,6 +172,8 @@ export class NoteTree {
         currentNote = parent;
       }
     }
+
+    return note;
   }
 
   private static *flattenInternal(root: Note): Generator<Note> {
