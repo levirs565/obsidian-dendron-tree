@@ -7,10 +7,12 @@ export interface DendronTreePluginSettings {
    */
   vaultPath?: string;
   vaultList: string[];
+  autoGenerateFrontmatter: boolean;
 }
 
 export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
   vaultList: [""],
+  autoGenerateFrontmatter: true,
 };
 
 export class DendronTreeSettingTab extends PluginSettingTab {
@@ -27,6 +29,16 @@ export class DendronTreeSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     containerEl.createEl("h2", { text: "Dendron Tree Settting" });
+
+    new Setting(containerEl)
+      .setName("Auto Generate Fronmatter")
+      .setDesc("Generate fronmatter for new file even if file is created outside of Dendron tree")
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.autoGenerateFrontmatter).onChange(async (value) => {
+          this.plugin.settings.autoGenerateFrontmatter = value;
+          await this.plugin.saveSettings();
+        });
+      });
 
     new Setting(containerEl).setName("Vault List").setHeading();
     for (const vault of this.plugin.settings.vaultList) {

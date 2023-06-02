@@ -1,7 +1,7 @@
 import { App, TAbstractFile, TFile, TFolder } from "obsidian";
-import { NoteMetadata, NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
+import { NoteMetadata, NoteTree } from "./note";
 import { InvalidRootModal } from "./modal/invalid-root";
-import { getFolderFile } from "./utils";
+import { generateUUID, getFolderFile } from "./utils";
 import { ParsedPath } from "./path";
 
 export class DendronVault {
@@ -50,10 +50,23 @@ export class DendronVault {
 
   async createNote(baseName: string) {
     const filePath = `${this.path}/${baseName}.md`;
-    const notePath = NoteTree.getPathFromFileName(baseName);
-    const title = generateNoteTitle(notePath[notePath.length - 1], isUseTitleCase(baseName));
-    const template = getNoteTemplate(title);
-    return await this.app.vault.create(filePath, template);
+    return await this.app.vault.create(filePath, "");
+  }
+
+  async generateFronmatter(file: TFile) {
+    if (!this.isNote(file.extension)) return;
+
+    const note = this.tree.getFromFileName(file.basename);
+
+    if (!note) return false;
+
+    return await this.app.fileManager.processFrontMatter(file, (fronmatter) => {
+      if (!fronmatter.id) fronmatter.id = generateUUID();
+      if (!fronmatter.title) fronmatter.title = note.title;
+      if (fronmatter.desc === undefined) fronmatter.desc = "";
+      if (!fronmatter.created) fronmatter.created = file.stat.ctime;
+      if (!fronmatter.updated) fronmatter.updated = file.stat.mtime;
+    });
   }
 
   isNote(extension: string) {

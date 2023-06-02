@@ -1,5 +1,4 @@
 import { TFile } from "obsidian";
-import { generateUUID } from "./utils";
 
 export interface NoteMetadata {
   title?: string;
@@ -85,19 +84,6 @@ export function generateNoteTitle(originalName: string, titlecase: boolean) {
       return word[0].toUpperCase() + word.substring(1).toLowerCase();
     })
     .join(" ");
-}
-
-export function getNoteTemplate(title: string) {
-  const time = new Date().getTime();
-  return `---
-id: ${generateUUID()}
-desc: ''
-title: ${title}
-updated: ${time}
-created: ${time}
----
-
-`;
 }
 
 export class NoteTree {

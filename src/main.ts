@@ -77,9 +77,11 @@ export default class DendronTreePlugin extends Plugin {
     return file instanceof TFolder ? this.findVaultByParent(file) : undefined;
   }
 
-  onCreateFile = (file: TAbstractFile) => {
+  onCreateFile = async (file: TAbstractFile) => {
     const vault = this.findVaultByParent(file.parent);
     if (vault && vault.onFileCreated(file)) {
+      if (this.settings.autoGenerateFrontmatter && file instanceof TFile && file.stat.size === 0)
+        await vault.generateFronmatter(file);
       this.updateNoteStore();
     }
   };
