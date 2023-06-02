@@ -1,4 +1,4 @@
-import type { MetadataCache, Stat, TFile, Vault } from "obsidian";
+import type { Stat, TFile, Vault } from "obsidian";
 import { Note, NoteTree, generateNoteTitle, isUseTitleCase } from "./note";
 import { parsePath } from "./path";
 
@@ -116,6 +116,24 @@ describe("note class", () => {
     const root = new Note("root", true);
     expect(root.getPath()).toBe("root");
   });
+
+  it("use generated title when titlecase true", () => {
+    const note = new Note("aku-cinta", true);
+    expect(note.title).toBe("Aku Cinta");
+  });
+
+  it("use filename as title when titlecase false", () => {
+    const note = new Note("aKu-ciNta", false);
+    expect(note.title).toBe("aKu-ciNta");
+  });
+
+  it("use metadata title when has metadata", () => {
+    const note = new Note("aKu-ciNta", false);
+    note.syncMetadata({
+      title: "Butuh Kamu",
+    });
+    expect(note.title).toBe("Butuh Kamu");
+  });
 });
 
 function createTFile(path: string): TFile {
@@ -131,19 +149,11 @@ function createTFile(path: string): TFile {
   };
 }
 
-function createMetadataCache() {
-  return {
-    getFileCache(file: TFile) {
-      return null;
-    },
-  } as unknown as MetadataCache;
-}
-
 describe("tree class", () => {
   it("add file without sort", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.def.jkl.md"), createMetadataCache(), false);
-    tree.addFile(createTFile("abc.def.ghi.md"), createMetadataCache(), false);
+    tree.addFile(createTFile("abc.def.jkl.md"));
+    tree.addFile(createTFile("abc.def.ghi.md"));
     expect(tree.root.children.length).toBe(1);
     expect(tree.root.children[0].name).toBe("abc");
     expect(tree.root.children[0].children.length).toBe(1);
@@ -155,9 +165,9 @@ describe("tree class", () => {
 
   it("add file with sort", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.def.jkl.md"), createMetadataCache(), true);
-    tree.addFile(createTFile("abc.def.ghi.md"), createMetadataCache(), true);
-    tree.addFile(createTFile("abc.def.mno.md"), createMetadataCache(), true);
+    tree.addFile(createTFile("abc.def.jkl.md"), true);
+    tree.addFile(createTFile("abc.def.ghi.md"), true);
+    tree.addFile(createTFile("abc.def.mno.md"), true);
     expect(tree.root.children[0].children[0].children.length).toBe(3);
     expect(tree.root.children[0].children[0].children[0].name).toBe("ghi");
     expect(tree.root.children[0].children[0].children[1].name).toBe("jkl");
@@ -165,30 +175,30 @@ describe("tree class", () => {
   });
   it("get note by file base name", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.def.jkl.md"), createMetadataCache(), false);
-    tree.addFile(createTFile("abc.def.ghi.md"), createMetadataCache(), false);
+    tree.addFile(createTFile("abc.def.jkl.md"));
+    tree.addFile(createTFile("abc.def.ghi.md"));
     expect(tree.getFromFileName("abc.def.jkl")?.name).toBe("jkl");
     expect(tree.getFromFileName("abc.def.ghi")?.name).toBe("ghi");
     expect(tree.getFromFileName("abc.def.mno")).toBeUndefined();
   });
   it("delete note if do not have children", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.md"), createMetadataCache(), false);
+    tree.addFile(createTFile("abc.md"));
     tree.deleteByFileName("abc");
     expect(tree.getFromFileName("abc")).toBeUndefined();
   });
   it("do not delete note if have children", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.md"), createMetadataCache(), false);
-    tree.addFile(createTFile("abc.def.md"), createMetadataCache(), false);
+    tree.addFile(createTFile("abc.md"));
+    tree.addFile(createTFile("abc.def.md"));
     tree.deleteByFileName("abc");
     expect(tree.getFromFileName("abc")?.name).toBe("abc");
     expect(tree.getFromFileName("abc.def")?.name).toBe("def");
   });
   it("delete note and parent if do not have children and parent file is null", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc"), createMetadataCache(), false);
-    tree.addFile(createTFile("abc.def.ghi.md"), createMetadataCache(), false);
+    tree.addFile(createTFile("abc"));
+    tree.addFile(createTFile("abc.def.ghi.md"));
     tree.deleteByFileName("abc.def.ghi");
     expect(tree.getFromFileName("abc.def.ghi")).toBeUndefined();
     expect(tree.getFromFileName("abc.def")).toBeUndefined();
@@ -196,9 +206,9 @@ describe("tree class", () => {
   });
   it("sort note", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.def.jkl.md"), createMetadataCache(), false);
-    tree.addFile(createTFile("abc.def.ghi.md"), createMetadataCache(), false);
-    tree.addFile(createTFile("abc.def.mno.md"), createMetadataCache(), false);
+    tree.addFile(createTFile("abc.def.jkl.md"));
+    tree.addFile(createTFile("abc.def.ghi.md"));
+    tree.addFile(createTFile("abc.def.mno.md"));
     expect(tree.root.children[0].children[0].children.length).toBe(3);
     expect(tree.root.children[0].children[0].children[0].name).toBe("jkl");
     expect(tree.root.children[0].children[0].children[1].name).toBe("ghi");
@@ -210,9 +220,9 @@ describe("tree class", () => {
   });
   it("flatten note", () => {
     const tree = new NoteTree();
-    tree.addFile(createTFile("abc.def.md"), createMetadataCache(), true);
-    tree.addFile(createTFile("abc.def.ghi.md"), createMetadataCache(), true);
-    tree.addFile(createTFile("abc.jkl.mno.md"), createMetadataCache(), true);
+    tree.addFile(createTFile("abc.def.md"));
+    tree.addFile(createTFile("abc.def.ghi.md"));
+    tree.addFile(createTFile("abc.jkl.mno.md"));
     expect(tree.flatten().map((note) => note.getPath())).toEqual([
       "root",
       "abc",

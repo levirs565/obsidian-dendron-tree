@@ -1,5 +1,9 @@
-import { MetadataCache, TFile } from "obsidian";
+import { TFile } from "obsidian";
 import { generateUUID } from "./utils";
+
+export interface NoteMetadata {
+  title?: string;
+}
 
 export class Note {
   name: string;
@@ -10,7 +14,7 @@ export class Note {
 
   constructor(private originalName: string, private titlecase: boolean) {
     this.name = originalName.toLowerCase();
-    this.title = generateNoteTitle(this.originalName, this.titlecase);
+    this.syncMetadata(undefined);
   }
 
   appendChild(note: Note) {
@@ -50,11 +54,8 @@ export class Note {
     return component.join(".");
   }
 
-  syncMetadata(metadataCache: MetadataCache) {
-    if (!this.file) return;
-    const cache = metadataCache.getFileCache(this.file);
-    this.title =
-      cache?.frontmatter?.["title"] ?? generateNoteTitle(this.originalName, this.titlecase);
+  syncMetadata(metadata: NoteMetadata | undefined) {
+    this.title = metadata?.title ?? generateNoteTitle(this.originalName, this.titlecase);
   }
 }
 
@@ -114,7 +115,7 @@ export class NoteTree {
     return path.length === 1 && path[0] === "root";
   }
 
-  addFile(file: TFile, metadataCache: MetadataCache, sort: boolean) {
+  addFile(file: TFile, sort = false) {
     const titlecase = isUseTitleCase(file.basename);
     const path = NoteTree.getPathFromFileName(file.basename);
 
@@ -134,7 +135,7 @@ export class NoteTree {
       }
 
     currentNote.file = file;
-    currentNote.syncMetadata(metadataCache);
+    return currentNote;
   }
 
   getFromFileName(name: string) {
@@ -171,12 +172,6 @@ export class NoteTree {
         currentNote = parent;
       }
     }
-  }
-
-  updateMetadata(file: TFile, metadataCache: MetadataCache) {
-    const note = this.getFromFileName(file.basename);
-    if (!note) return;
-    note.syncMetadata(metadataCache);
   }
 
   private static *flattenInternal(root: Note): Generator<Note> {

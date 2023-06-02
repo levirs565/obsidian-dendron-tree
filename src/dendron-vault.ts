@@ -1,5 +1,5 @@
 import { App, TAbstractFile, TFile, TFolder } from "obsidian";
-import { NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
+import { NoteMetadata, NoteTree, generateNoteTitle, getNoteTemplate, isUseTitleCase } from "./note";
 import { InvalidRootModal } from "./modal/invalid-root";
 import { getFolderFile } from "./utils";
 import { ParsedPath } from "./path";
@@ -10,6 +10,14 @@ export class DendronVault {
   isIniatialized = false;
 
   constructor(public app: App, public path: string) {}
+
+  private resolveMetadata(file: TFile): NoteMetadata | undefined {
+    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!frontmatter) return undefined;
+    return {
+      title: frontmatter["title"],
+    };
+  }
 
   get formattedPath() {
     return this.path === "" ? "/" : this.path;
@@ -30,7 +38,7 @@ export class DendronVault {
 
     for (const child of root.children)
       if (child instanceof TFile && this.isNote(child.extension))
-        this.tree.addFile(child, this.app.metadataCache, false);
+        this.tree.addFile(child).syncMetadata(this.resolveMetadata(child));
 
     this.tree.sort();
     this.isIniatialized = true;
@@ -55,14 +63,17 @@ export class DendronVault {
   onFileCreated(file: TAbstractFile): boolean {
     if (!(file instanceof TFile) || !this.isNote(file.extension)) return false;
 
-    this.tree.addFile(file, this.app.metadataCache, true);
+    this.tree.addFile(file, true).syncMetadata(this.resolveMetadata(file));
     return true;
   }
 
   onMetadataChanged(file: TFile): boolean {
     if (!this.isNote(file.extension)) return false;
 
-    this.tree.updateMetadata(file, this.app.metadataCache);
+    const note = this.tree.getFromFileName(file.basename);
+    if (!note) return false;
+
+    note.syncMetadata(this.resolveMetadata(file));
     return true;
   }
 
