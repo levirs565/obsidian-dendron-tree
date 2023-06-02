@@ -2,6 +2,9 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 import DendronTreePlugin from "./main";
 
 export interface DendronTreePluginSettings {
+  /**
+   * @deprecated use vaultList
+   */
   vaultPath?: string;
   vaultList: string[];
 }
