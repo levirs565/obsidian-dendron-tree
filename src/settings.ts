@@ -8,11 +8,13 @@ export interface DendronTreePluginSettings {
   vaultPath?: string;
   vaultList: string[];
   autoGenerateFrontmatter: boolean;
+  autoReveal: boolean;
 }
 
 export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
   vaultList: [""],
   autoGenerateFrontmatter: true,
+  autoReveal: true,
 };
 
 export class DendronTreeSettingTab extends PluginSettingTab {
@@ -36,6 +38,16 @@ export class DendronTreeSettingTab extends PluginSettingTab {
       .addToggle((toggle) => {
         toggle.setValue(this.plugin.settings.autoGenerateFrontmatter).onChange(async (value) => {
           this.plugin.settings.autoGenerateFrontmatter = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName("Auto Reveal")
+      .setDesc("Automatically reveal active file in Dendron Tree")
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.autoReveal).onChange(async (value) => {
+          this.plugin.settings.autoReveal = value;
           await this.plugin.saveSettings();
         });
       });

@@ -113,6 +113,7 @@ export default class DendronTreePlugin extends Plugin {
 
   onOpenFile = (file: TFile) => {
     activeFile.set(file);
+    if (this.settings.autoReveal) this.revealFile(file);
   };
 
   onFileMenu = (menu: Menu, file: TAbstractFile) => {
