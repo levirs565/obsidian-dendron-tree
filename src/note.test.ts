@@ -110,11 +110,13 @@ describe("note class", () => {
     ch2.appendChild(ch3);
 
     expect(ch3.getPath()).toBe("parent.parent2.child");
+    expect(ch3.getPathNotes()).toEqual([root, ch1, ch2, ch3]);
   });
 
   it("get path on root", () => {
     const root = new Note("root", true);
     expect(root.getPath()).toBe("root");
+    expect(root.getPathNotes()).toEqual([root]);
   });
 
   it("use generated title when titlecase true", () => {

@@ -1,4 +1,4 @@
-import { Plugin, TAbstractFile, TFile, TFolder, addIcon } from "obsidian";
+import { Menu, Plugin, TAbstractFile, TFile, TFolder, addIcon } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
@@ -47,6 +47,7 @@ export default class DendronTreePlugin extends Plugin {
       this.registerEvent(this.app.vault.on("rename", this.onRenameFile));
       this.registerEvent(this.app.metadataCache.on("resolve", this.onResolveMetadata));
       this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile));
+      this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenu));
     });
   }
 
@@ -114,12 +115,34 @@ export default class DendronTreePlugin extends Plugin {
     activeFile.set(file);
   };
 
+  onFileMenu = (menu: Menu, file: TAbstractFile) => {
+    if (!(file instanceof TFile)) return;
+
+    menu.addItem((item) => {
+      item
+        .setIcon(dendronActivityBarName)
+        .setTitle("Reveal in Dendron Tree")
+        .onClick(() => this.revealFile(file));
+    });
+  };
+
   onResolveMetadata = (file: TFile) => {
     const vault = this.findVaultByParent(file.parent);
     if (vault && vault.onMetadataChanged(file)) {
       this.updateNoteStore();
     }
   };
+
+  revealFile(file: TFile) {
+    const vault = this.findVaultByParent(file.parent);
+    if (!vault) return;
+    const note = vault.tree.getFromFileName(file.basename);
+    if (!note) return;
+    for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_DENDRON)) {
+      if (!(leaf.view instanceof DendronView)) continue;
+      leaf.view.component.focusTo(vault, note);
+    }
+  }
 
   async activateView() {
     const leafs = this.app.workspace.getLeavesOfType(VIEW_TYPE_DENDRON);

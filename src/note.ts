@@ -40,17 +40,27 @@ export class Note {
 
   getPath() {
     const component: string[] = [];
+    const notes = this.getPathNotes();
 
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let current: Note | undefined = this;
-    while (current && current.name !== "root") {
-      component.unshift(current.name);
-      current = current.parent;
+    if (notes.length === 1) return notes[0].name;
+
+    for (const note of notes) {
+      if (!note.parent && note.name === "root") continue;
+      component.push(note.name);
     }
 
-    if (component.length == 0) component.push("root");
-
     return component.join(".");
+  }
+
+  getPathNotes() {
+    const notes: Note[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let current: Note | undefined = this;
+    while (current) {
+      notes.unshift(current);
+      current = current.parent;
+    }
+    return notes;
   }
 
   syncMetadata(metadata: NoteMetadata | undefined) {

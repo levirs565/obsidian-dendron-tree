@@ -7,11 +7,13 @@
   import { openFile } from "../utils";
   import { LookupModal } from "../modal/lookup";
   import { DendronVault } from "src/dendron-vault";
+  import { tick } from "svelte";
 
   export let note: Note;
   export let isRoot: boolean = false;
   export let vault: DendronVault;
 
+  let headerElement: HTMLDivElement;
   let isCollapsed = true;
   $: isActive = note.file && $activeFile === note.file;
 
@@ -56,6 +58,37 @@
 
     menu.showAtMouseEvent(e);
   }
+
+  let expandTransitionWaiter: Promise<void> = Promise.resolve();
+  let expandTransitionEnd: (value: void) => void;
+  function expandTransitionStart() {
+    expandTransitionWaiter = new Promise((resolve) => {
+      expandTransitionEnd = resolve;
+    });
+  }
+
+  type FocusNotesFunction = (pathNotes: Note[]) => void;
+  const childrenFocus: Record<string, FocusNotesFunction> = {};
+
+  export const focusNotes: FocusNotesFunction = async (pathNotes: Note[]) => {
+    const nextNote = pathNotes.shift();
+
+    if (nextNote) {
+      isCollapsed = false;
+      await tick();
+
+      const focusFN = childrenFocus[nextNote.name];
+      if (!focusFN) return;
+
+      if (pathNotes.length === 0) await expandTransitionWaiter;
+
+      focusFN(pathNotes);
+    } else
+      headerElement.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+  };
 </script>
 
 <div class="tree-item is-clickable" class:is-collapsed={isCollapsed}>
@@ -67,6 +100,7 @@
       isCollapsed = false;
     }}
     on:contextmenu={openMenu}
+    bind:this={headerElement}
   >
     {#if note.children.length > 0}
       <div
@@ -86,9 +120,17 @@
     {/if}
   </div>
   {#if note.children.length > 0 && !isCollapsed}
-    <div class="tree-item-children" transition:slide={{ duration: 100 }}>
+    <div
+      class="tree-item-children"
+      transition:slide={{ duration: 100 }}
+      on:introstart={expandTransitionStart}
+      on:introend={() => {
+        // expandTransitionEnd is dyanmic listener
+        expandTransitionEnd();
+      }}
+    >
       {#each note.children as child (child.name)}
-        <svelte:self note={child} {vault} />
+        <svelte:self note={child} {vault} bind:focusNotes={childrenFocus[child.name]} />
       {/each}
     </div>
   {/if}
