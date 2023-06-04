@@ -85,7 +85,6 @@
       focusFN(pathNotes);
     } else
       headerElement.scrollIntoView({
-        behavior: "smooth",
         block: "center",
       });
   };
