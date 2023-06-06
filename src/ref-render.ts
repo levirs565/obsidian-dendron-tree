@@ -1,7 +1,7 @@
 import { App, ButtonComponent, MarkdownRenderChild, MarkdownRenderer, TFile } from "obsidian";
 import { DendronVault } from "./dendron-vault";
 import { openFile } from "./utils";
-import { RefAnchor, getRefContentRange, parseRefAnchor, refAnchorToLink } from "./ref";
+import { RefAnchor, RefRange, getRefContentRange, parseRefAnchor, refAnchorToLink } from "./ref";
 
 interface MarkdownRenderer2 extends MarkdownRenderer {
   renderer: {
@@ -21,6 +21,10 @@ class RefMarkdownRenderer extends MarkdownRenderer2 {
   get file(): TFile {
     return this.parent.file;
   }
+
+  edit(markdown: string) {
+    this.parent.editContent(markdown);
+  }
 }
 
 export class RefRenderChild extends MarkdownRenderChild {
@@ -28,6 +32,9 @@ export class RefRenderChild extends MarkdownRenderChild {
   renderer: RefMarkdownRenderer;
   startAnchor?: RefAnchor;
   endAnchor?: RefAnchor;
+  range: RefRange | null;
+  markdown?: string;
+  found = false;
 
   constructor(
     public app: App,
@@ -69,29 +76,51 @@ export class RefRenderChild extends MarkdownRenderChild {
     return link;
   }
 
-  async getContent(): Promise<string> {
-    const markdown = await this.app.vault.cachedRead(this.file);
-    if (this.subpath.length === 0) return markdown;
+  async getContent(): Promise<string | null> {
+    this.markdown = await this.app.vault.cachedRead(this.file);
+    if (this.subpath.length === 0) return this.markdown;
 
     const metadata = this.app.metadataCache.getFileCache(this.file);
     if (metadata && this.startAnchor) {
-      const range = getRefContentRange(this.startAnchor, this.endAnchor, metadata);
-      if (range) {
+      this.range = getRefContentRange(this.startAnchor, this.endAnchor, metadata);
+      if (this.range) {
         let currentLineIndex = 0;
-        while (currentLineIndex < range.startLineOffset) {
-          if (markdown[range.start] === "\n") currentLineIndex++;
-          range.start++;
+        while (currentLineIndex < this.range.startLineOffset) {
+          if (this.markdown[this.range.start] === "\n") currentLineIndex++;
+          this.range.start++;
         }
 
-        return markdown.substring(range.start, range.end);
+        return this.markdown.substring(this.range.start, this.range.end);
       }
     }
 
-    return "### Unable to find section ".concat(this.subpath, " in ").concat(this.file.basename);
+    return null;
+  }
+
+  editContent(target: string) {
+    if (!this.found || !this.markdown) return;
+
+    let md;
+    if (!this.range) {
+      md = target;
+    } else {
+      const before = this.markdown.substring(0, this.range.start);
+      md = before + target;
+      if (this.range.end) {
+        const after = this.markdown.substring(this.range.end);
+        md += after;
+      }
+    }
+    this.app.vault.modify(this.file, md);
   }
 
   async loadFile() {
-    this.renderer.renderer.set(await this.getContent());
+    const content = await this.getContent();
+    this.found = !!content;
+    this.renderer.renderer.set(
+      content ??
+        "### Unable to find section ".concat(this.subpath, " in ").concat(this.file.basename)
+    );
   }
 
   onload(): void {
@@ -99,7 +128,7 @@ export class RefRenderChild extends MarkdownRenderChild {
     this.registerEvent(
       this.app.metadataCache.on("changed", async (file, data) => {
         if (file === this.file) {
-          this.renderer.renderer.set(await this.getContent());
+          this.loadFile();
         }
       })
     );
