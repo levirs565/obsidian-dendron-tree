@@ -1,4 +1,4 @@
-import { Menu, Plugin, TAbstractFile, TFile, TFolder, addIcon } from "obsidian";
+import { Menu, Plugin, TAbstractFile, TFile, TFolder, addIcon, parseLinktext } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
@@ -7,6 +7,7 @@ import { getFolderFile } from "./utils";
 import { DendronVault } from "./dendron-vault";
 import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
 import { parsePath } from "./path";
+import { UnresolvedRefRenderChild, RefRenderChild } from "./ref-render";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
@@ -48,6 +49,44 @@ export default class DendronTreePlugin extends Plugin {
       this.registerEvent(this.app.metadataCache.on("resolve", this.onResolveMetadata));
       this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile));
       this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenu));
+    });
+
+    this.registerMarkdownPostProcessor((element, context) => {
+      const { dir } = parsePath(context.sourcePath);
+      const currentVault = this.findVaultByParentPath(dir);
+
+      if (!currentVault) return;
+
+      const embeddedItems = element.querySelectorAll(".internal-embed");
+      const promises: Promise<void>[] = [];
+      embeddedItems.forEach((el) => {
+        const link = el.getAttribute("src");
+        if (!link) return;
+
+        const { path, subpath } = parseLinktext(link);
+        const target = this.app.metadataCache.getFirstLinkpathDest(path, context.sourcePath);
+
+        if (target && target.extension !== "md") return;
+
+        const note = currentVault.tree.getFromFileName(path);
+
+        if (!note || !note.file) {
+          context.addChild(
+            new UnresolvedRefRenderChild(this.app, el as HTMLElement, currentVault, path)
+          );
+          return;
+        }
+
+        const child = new RefRenderChild(
+          this.app,
+          el as HTMLElement,
+          note.file,
+          subpath.slice(1) ?? ""
+        );
+        promises.push(child.loadFile());
+        context.addChild(child);
+      });
+      return Promise.all(promises);
     });
   }
 
