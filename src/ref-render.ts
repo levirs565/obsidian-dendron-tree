@@ -3,6 +3,7 @@ import {
   ButtonComponent,
   MarkdownRenderChild,
   MarkdownRenderer,
+  MarkdownRendererConstructorType,
   TFile,
   setIcon,
 } from "obsidian";
@@ -19,17 +20,9 @@ import {
 import { dendronActivityBarName } from "./icons";
 import DendronTreePlugin from "./main";
 
-interface MarkdownRenderer2 extends MarkdownRenderer {
-  renderer: {
-    set(markdown: string): void;
-  };
-}
+const MarkdownRendererConstructor = MarkdownRenderer as unknown as MarkdownRendererConstructorType;
 
-const MarkdownRenderer2 = MarkdownRenderer as unknown as {
-  new (app: App, container: HTMLElement, queed: boolean): MarkdownRenderer2;
-};
-
-class RefMarkdownRenderer extends MarkdownRenderer2 {
+class RefMarkdownRenderer extends MarkdownRendererConstructor {
   constructor(public parent: NoteRefRenderChild, queed: boolean) {
     super(parent.app, parent.previewEl, queed);
   }
