@@ -1,7 +1,15 @@
-import { App, ButtonComponent, MarkdownRenderChild, MarkdownRenderer, TFile } from "obsidian";
+import {
+  App,
+  ButtonComponent,
+  MarkdownRenderChild,
+  MarkdownRenderer,
+  TFile,
+  setIcon,
+} from "obsidian";
 import { DendronVault } from "./dendron-vault";
 import { openFile } from "./utils";
 import { RefAnchor, RefRange, getRefContentRange, parseRefAnchor, refAnchorToLink } from "./ref";
+import { dendronActivityBarName } from "./icons";
 
 interface MarkdownRenderer2 extends MarkdownRenderer {
   renderer: {
@@ -44,8 +52,11 @@ export class RefRenderChild extends MarkdownRenderChild {
   ) {
     super(containerEl);
 
-    this.containerEl.classList.add("markdown-embed", "inline-embed", "is-loaded");
+    this.containerEl.classList.add("dendron-embed", "markdown-embed", "inline-embed", "is-loaded");
     this.containerEl.setText("");
+
+    const icon = this.containerEl.createDiv("dendron-icon");
+    setIcon(icon, dendronActivityBarName);
 
     this.previewEl = this.containerEl.createDiv("markdown-embed-content");
 
@@ -139,8 +150,14 @@ export class UnresolvedRefRenderChild extends MarkdownRenderChild {
   constructor(app: App, containerEl: HTMLElement, vault: DendronVault, path: string) {
     super(containerEl);
 
-    this.containerEl.classList.add("file-embed", "mod-empty", "is-loaded");
-    this.containerEl.setText(`"${path}" is not created yet. Click to create.`);
+    this.containerEl.classList.add("dendron-embed", "file-embed", "mod-empty", "is-loaded");
+    this.containerEl.setText("");
+
+    const icon = this.containerEl.createDiv("dendron-icon");
+    setIcon(icon, dendronActivityBarName);
+    const content = this.containerEl.createDiv();
+    content.setText(`"${path}" is not created yet. Click to create.`);
+
     this.containerEl.onclick = () => {
       vault.createNote(path).then((file) => openFile(app, file));
     };

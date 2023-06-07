@@ -1,8 +1,13 @@
-/*
+.dendron-embed.mod-empty,
+.markdown-source-view.mod-cm6 .cm-content > .dendron-embed.mod-empty {
+  display: flex;
+  align-items: center;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.dendron-embed .dendron-icon {
+  --icon-size: var(--icon-s);
+}
 
-If your plugin does not need CSS, delete this file.
-
-*/
+.dendron-embed.mod-empty .dendron-icon {
+  margin: 0px 8px;
+}
