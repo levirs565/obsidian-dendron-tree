@@ -132,9 +132,9 @@ export function getRefContentRange(
   return range;
 }
 
-export function refAnchorToLink(achor: RefAnchor): string {
-  if (achor.type === "header") return `#${this.startAnchor.name}`;
-  else if (achor.type === "block") return `#^${this.startAnchor.name}`;
+export function refAnchorToLink(anchor: RefAnchor): string {
+  if (anchor.type === "header") return `#${anchor.name}`;
+  else if (anchor.type === "block") return `#^${anchor.name}`;
   return "";
 }
 
