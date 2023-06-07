@@ -8,6 +8,8 @@ import { DendronVault } from "./dendron-vault";
 import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
 import { parsePath } from "./path";
 import { UnresolvedRefRenderChild, RefRenderChild } from "./ref-render";
+import { ViewPlugin } from "@codemirror/view";
+import { RefLivePlugin } from "./ref-live";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
@@ -41,7 +43,13 @@ export default class DendronTreePlugin extends Plugin {
     });
 
     this.app.workspace.onLayoutReady(() => {
+      // this.registerEditorExtension(myStateField);
       this.onRootFolderChanged();
+      this.registerEditorExtension(
+        ViewPlugin.define((v) => {
+          return new RefLivePlugin(this);
+        })
+      );
 
       this.registerEvent(this.app.vault.on("create", this.onCreateFile));
       this.registerEvent(this.app.vault.on("delete", this.onDeleteFile));
