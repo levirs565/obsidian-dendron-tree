@@ -11,3 +11,7 @@
 .dendron-embed.mod-empty .dendron-icon {
   margin: 0px 8px;
 }
+
+.dendron-embed.markdown-embed .dendron-icon {
+  margin: 4px;
+}

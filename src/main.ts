@@ -1,4 +1,13 @@
-import { Menu, Plugin, TAbstractFile, TFile, TFolder, addIcon } from "obsidian";
+import {
+  HoverPopover,
+  Menu,
+  Plugin,
+  PopoverState,
+  TAbstractFile,
+  TFile,
+  TFolder,
+  addIcon,
+} from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
@@ -10,6 +19,8 @@ import { parsePath } from "./path";
 import { ViewPlugin } from "@codemirror/view";
 import { RefLivePlugin } from "./ref-live";
 import { createRefMarkdownProcessor } from "./ref-markdown-processor";
+import { resolveRef } from "./ref";
+import { NoteRefRenderChild, createRefRenderer } from "./ref-render";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
@@ -56,6 +67,38 @@ export default class DendronTreePlugin extends Plugin {
       this.registerEvent(this.app.metadataCache.on("resolve", this.onResolveMetadata));
       this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile));
       this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenu));
+
+      const pagePreview = this.app.internalPlugins.getEnabledPluginById("page-preview");
+      if (!pagePreview) return;
+      const originalLinkHover = pagePreview.onLinkHover;
+      const originalLinkHoverBinded = originalLinkHover.bind(pagePreview);
+      pagePreview.onLinkHover = (parent, targetEl, link, sourcePath, state) => {
+        const ref = resolveRef(this, sourcePath, link);
+
+        if (!ref || ref.type !== "maybe-note")
+          return originalLinkHoverBinded(parent, targetEl, link, sourcePath, state);
+
+        if (
+          !(
+            parent.hoverPopover &&
+            parent.hoverPopover.state !== PopoverState.Hidden &&
+            parent.hoverPopover.targetEl === targetEl
+          )
+        ) {
+          const popOver = new HoverPopover(parent, targetEl);
+
+          setTimeout(async () => {
+            if (popOver.state === PopoverState.Hidden) return;
+
+            const container = popOver.hoverEl.createDiv();
+            const component = createRefRenderer(ref, this, container);
+            popOver.addChild(component);
+            if (component instanceof NoteRefRenderChild) await component.loadFile();
+
+            if (popOver.state === PopoverState.Shown) popOver.position();
+          }, 100);
+        }
+      };
     });
 
     this.registerMarkdownPostProcessor(createRefMarkdownProcessor(this));
