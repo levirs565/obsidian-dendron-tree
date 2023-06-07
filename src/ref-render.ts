@@ -8,8 +8,16 @@ import {
 } from "obsidian";
 import { DendronVault } from "./dendron-vault";
 import { openFile } from "./utils";
-import { RefAnchor, RefRange, getRefContentRange, parseRefAnchor, refAnchorToLink } from "./ref";
+import {
+  MaybeNoteRef,
+  RefAnchor,
+  RefRange,
+  getRefContentRange,
+  parseRefAnchor,
+  refAnchorToLink,
+} from "./ref";
 import { dendronActivityBarName } from "./icons";
+import DendronTreePlugin from "./main";
 
 interface MarkdownRenderer2 extends MarkdownRenderer {
   renderer: {
@@ -22,7 +30,7 @@ const MarkdownRenderer2 = MarkdownRenderer as unknown as {
 };
 
 class RefMarkdownRenderer extends MarkdownRenderer2 {
-  constructor(public parent: RefRenderChild, queed: boolean) {
+  constructor(public parent: NoteRefRenderChild, queed: boolean) {
     super(parent.app, parent.previewEl, queed);
   }
 
@@ -35,7 +43,7 @@ class RefMarkdownRenderer extends MarkdownRenderer2 {
   }
 }
 
-export class RefRenderChild extends MarkdownRenderChild {
+export class NoteRefRenderChild extends MarkdownRenderChild {
   previewEl: HTMLElement;
   renderer: RefMarkdownRenderer;
   startAnchor?: RefAnchor;
@@ -161,5 +169,22 @@ export class UnresolvedRefRenderChild extends MarkdownRenderChild {
     this.containerEl.onclick = () => {
       vault.createNote(path).then((file) => openFile(app, file));
     };
+  }
+}
+
+export function createRefRenderer(
+  target: MaybeNoteRef,
+  plugin: DendronTreePlugin,
+  container: HTMLElement
+) {
+  if (!target.note || !target.note.file) {
+    return new UnresolvedRefRenderChild(plugin.app, container, target.vault, target.path);
+  } else {
+    return new NoteRefRenderChild(
+      plugin.app,
+      container,
+      target.note.file,
+      target.subpath.slice(1) ?? ""
+    );
   }
 }

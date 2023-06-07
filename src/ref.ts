@@ -1,4 +1,8 @@
-import { CachedMetadata, HeadingCache } from "obsidian";
+import { CachedMetadata, HeadingCache, TFile, parseLinktext } from "obsidian";
+import DendronTreePlugin from "./main";
+import { parsePath } from "./path";
+import { Note } from "./note";
+import { DendronVault } from "./dendron-vault";
 
 export type RefAnchor =
   | {
@@ -140,4 +144,48 @@ function githubStyleAnchoring(title: string) {
     .filter((x) => x.length > 0)
     .map((x) => x.toLowerCase())
     .join("-");
+}
+
+export interface MaybeNoteRef {
+  type: "maybe-note";
+  vault: DendronVault;
+  note?: Note;
+  path: string;
+  subpath: string;
+}
+
+export interface FileRef {
+  type: "file";
+  file: TFile;
+}
+
+export type RefTarget = MaybeNoteRef | FileRef;
+
+export function resolveRef(
+  plugin: DendronTreePlugin,
+  sourcePath: string,
+  link: string
+): RefTarget | null {
+  const { dir: vaultDir } = parsePath(sourcePath);
+  const currentVault = plugin.findVaultByParentPath(vaultDir);
+
+  if (!currentVault) return null;
+
+  const { path, subpath } = parseLinktext(link);
+  const target = plugin.app.metadataCache.getFirstLinkpathDest(path, sourcePath);
+
+  if (target && target.extension !== "md")
+    return {
+      type: "file",
+      file: target,
+    };
+
+  const note = currentVault.tree.getFromFileName(path);
+  return {
+    type: "maybe-note",
+    vault: currentVault,
+    note,
+    path,
+    subpath,
+  };
 }

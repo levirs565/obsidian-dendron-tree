@@ -1,8 +1,8 @@
 import { EditorView, PluginValue, ViewUpdate } from "@codemirror/view";
-import { Component, editorLivePreviewField, parseLinktext } from "obsidian";
+import { Component, editorLivePreviewField } from "obsidian";
 import DendronTreePlugin from "./main";
-import { parsePath } from "./path";
-import { RefRenderChild, UnresolvedRefRenderChild } from "./ref-render";
+import { NoteRefRenderChild, createRefRenderer } from "./ref-render";
+import { resolveRef } from "./ref";
 
 interface InternalEmbedWidget {
   end: number;
@@ -34,68 +34,49 @@ export class RefLivePlugin implements PluginValue {
           const widget = iter.value.spec.widget;
           if (widget && widget.href && widget.sourcePath && widget.title) {
             const internalWidget = widget as InternalEmbedWidget;
-            hack(internalWidget, this.plugin);
+            this.hack(internalWidget);
           }
           iter.next();
         }
       }
     });
   }
-}
 
-function hack(widget: InternalEmbedWidget, plugin: DendronTreePlugin) {
-  if (widget.hacked) {
-    return;
-  }
-  widget.hacked = true;
-
-  if (!widget.href) return;
-
-  const { dir } = parsePath(widget.sourcePath);
-  const currentVault = plugin.findVaultByParentPath(dir);
-
-  if (!currentVault) return;
-
-  const { path, subpath } = parseLinktext(widget.href);
-  const target = plugin.app.metadataCache.getFirstLinkpathDest(path, widget.sourcePath);
-
-  if (target && target.extension !== "md") return;
-
-  const note = currentVault.tree.getFromFileName(path);
-
-  const loadComponent = (widget: InternalEmbedWidget) => {
-    if (!note || !note.file) {
-      widget.addChild(
-        new UnresolvedRefRenderChild(plugin.app, widget.containerEl, currentVault, path)
-      );
-    } else {
-      const child = new RefRenderChild(
-        plugin.app,
-        widget.containerEl,
-        note.file,
-        subpath.slice(1) ?? ""
-      );
-      widget.addChild(child);
-      child.loadFile();
-      return child;
+  hack(widget: InternalEmbedWidget) {
+    if (widget.hacked) {
+      return;
     }
-  };
+    widget.hacked = true;
 
-  widget.initDOM = function (this: InternalEmbedWidget) {
-    this.containerEl = createDiv("internal-embed");
-    loadComponent(this);
+    const plugin = this.plugin;
+    const target = resolveRef(plugin, widget.sourcePath, widget.href);
 
-    return this.containerEl;
-  };
+    if (!target || target.type !== "maybe-note") return;
 
-  widget.applyTitle = function (this: InternalEmbedWidget, containe: HTMLElement, title: string) {
-    this.title = title;
-  };
+    const loadComponent = (widget: InternalEmbedWidget) => {
+      const renderer = createRefRenderer(target, plugin, widget.containerEl);
+      if (renderer instanceof NoteRefRenderChild) renderer.loadFile();
+      widget.addChild(renderer);
+    };
 
-  if (widget.containerEl) {
-    console.log("Work around");
-    widget.children[0].unload();
-    widget.children.pop();
-    loadComponent(widget);
+    widget.initDOM = function (this: InternalEmbedWidget) {
+      this.containerEl = createDiv("internal-embed");
+      loadComponent(this);
+      return this.containerEl;
+    };
+
+    widget.applyTitle = function (
+      this: InternalEmbedWidget,
+      container: HTMLElement,
+      title: string
+    ) {
+      this.title = title;
+    };
+
+    if (widget.containerEl) {
+      widget.children[0].unload();
+      widget.children.pop();
+      loadComponent(widget);
+    }
   }
 }
