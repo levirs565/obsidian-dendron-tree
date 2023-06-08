@@ -50,7 +50,7 @@ export class DendronWorkspace {
       vault: currentVault,
       note,
       path,
-      subpath: parseRefSubpath(subpath),
+      subpath: parseRefSubpath(subpath.slice(1) ?? ""),
     };
   }
 }
