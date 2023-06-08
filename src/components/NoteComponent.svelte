@@ -35,7 +35,8 @@
   }
 
   function openLookup() {
-    new LookupModal(getPlugin(), note.getPath()).open();
+    const { app, workspace } = getPlugin();
+    new LookupModal(app, workspace, note.getPath()).open();
   }
 
   function openMenu(e: MouseEvent) {

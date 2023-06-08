@@ -1,9 +1,9 @@
-import { SuggestModal, getIcon } from "obsidian";
-import { Note } from "../note";
+import { App, SuggestModal, getIcon } from "obsidian";
+import { Note } from "../engine/note";
 import { openFile } from "../utils";
-import DendronTreePlugin from "../main";
-import { DendronVault } from "src/dendron-vault";
+import { DendronVault } from "../engine/vault";
 import { SelectVaultModal } from "./select-vault";
+import { DendronWorkspace } from "../engine/workspace";
 
 interface LookupItem {
   note: Note;
@@ -11,8 +11,12 @@ interface LookupItem {
 }
 
 export class LookupModal extends SuggestModal<LookupItem | null> {
-  constructor(private plugin: DendronTreePlugin, private initialQuery: string = "") {
-    super(plugin.app);
+  constructor(
+    app: App,
+    private workspace: DendronWorkspace,
+    private initialQuery: string = ""
+  ) {
+    super(app);
   }
 
   onOpen(): void {
@@ -29,7 +33,7 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
 
     let foundExact = true;
 
-    for (const vault of this.plugin.vaultList) {
+    for (const vault of this.workspace.vaultList) {
       let currentFoundExact = false;
       for (const note of vault.tree.flatten()) {
         const path = note.getPath();
@@ -64,7 +68,7 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
       el.createEl("small", {
         text: item
           ? item.note.getPath() +
-            (this.plugin.vaultList.length > 1 ? ` (${item.vault.formattedPath})` : "")
+            (this.workspace.vaultList.length > 1 ? ` (${item.vault.formattedPath})` : "")
           : "Note does not exist",
         cls: "suggestion-content",
       });
@@ -88,10 +92,10 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
     };
     if (item?.vault) {
       await doCreate(item.vault);
-    } else if (this.plugin.vaultList.length == 1) {
-      await doCreate(this.plugin.vaultList[0]);
+    } else if (this.workspace.vaultList.length == 1) {
+      await doCreate(this.workspace.vaultList[0]);
     } else {
-      new SelectVaultModal(this.plugin, doCreate).open();
+      new SelectVaultModal(this.app, this.workspace, doCreate).open();
     }
   }
 }

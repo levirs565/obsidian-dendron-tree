@@ -1,5 +1,5 @@
 import { Modal, Setting } from "obsidian";
-import { DendronVault } from "src/dendron-vault";
+import { DendronVault } from "../engine/vault";
 
 export class InvalidRootModal extends Modal {
   constructor(private dendronVault: DendronVault) {

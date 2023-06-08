@@ -1,15 +1,19 @@
-import { SuggestModal } from "obsidian";
-import { DendronVault } from "src/dendron-vault";
-import DendronTreePlugin from "src/main";
+import { App, SuggestModal } from "obsidian";
+import { DendronVault } from "../engine/vault";
+import { DendronWorkspace } from "../engine/workspace";
 
 export class SelectVaultModal extends SuggestModal<DendronVault> {
-  constructor(private plugin: DendronTreePlugin, private onSelected: (item: DendronVault) => void) {
-    super(plugin.app);
+  constructor(
+    app: App,
+    private workspace: DendronWorkspace,
+    private onSelected: (item: DendronVault) => void
+  ) {
+    super(app);
   }
 
   getSuggestions(query: string): DendronVault[] | Promise<DendronVault[]> {
     const queryLowercase = query.toLowerCase();
-    return this.plugin.vaultList.filter((value) =>
+    return this.workspace.vaultList.filter((value) =>
       value.path.toLowerCase().includes(queryLowercase)
     );
   }
