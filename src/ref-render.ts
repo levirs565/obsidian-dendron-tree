@@ -7,7 +7,7 @@ import {
   TFile,
   setIcon,
 } from "obsidian";
-import { DendronVault } from "./dendron-vault";
+import { DendronVault } from "./engine/vault";
 import { openFile } from "./utils";
 import {
   MaybeNoteRef,

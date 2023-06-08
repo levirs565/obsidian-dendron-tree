@@ -2,7 +2,7 @@ import { CachedMetadata, HeadingCache, TFile, parseLinktext } from "obsidian";
 import DendronTreePlugin from "./main";
 import { parsePath } from "./path";
 import { Note } from "./note";
-import { DendronVault } from "./dendron-vault";
+import { DendronVault } from "./engine/vault";
 
 export type RefAnchor =
   | {

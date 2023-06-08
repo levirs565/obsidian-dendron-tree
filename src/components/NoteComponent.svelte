@@ -1,12 +1,12 @@
 <script lang="ts">
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
-  import { Note } from "../note";
+  import { Note } from "../engine/note";
   import { Menu, getIcon } from "obsidian";
   import { activeFile, getPlugin, showVaultPath } from "../store";
   import { openFile } from "../utils";
   import { LookupModal } from "../modal/lookup";
-  import { DendronVault } from "src/dendron-vault";
+  import { DendronVault } from "src/engine/vault";
   import { tick } from "svelte";
 
   export let note: Note;

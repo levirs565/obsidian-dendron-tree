@@ -1,8 +1,8 @@
 <script lang="ts">
   import NoteComponent from "./NoteComponent.svelte";
   import { dendronVaultList } from "../store";
-  import { DendronVault } from "../dendron-vault";
-  import { Note } from "../note";
+  import { DendronVault } from "../engine/vault";
+  import { Note } from "../engine/note";
 
   const children: Record<string, NoteComponent> = {};
 

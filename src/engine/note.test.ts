@@ -1,6 +1,6 @@
 import type { Stat, TFile, Vault } from "obsidian";
 import { Note, NoteTree, generateNoteTitle, isUseTitleCase } from "./note";
-import { parsePath } from "./path";
+import { parsePath } from "../path";
 
 describe("note title", () => {
   it("use title case when file name is lowercase", () => {

@@ -1,19 +1,8 @@
-import {
-  HoverPopover,
-  Menu,
-  Plugin,
-  PopoverState,
-  TAbstractFile,
-  TFile,
-  TFolder,
-  addIcon,
-} from "obsidian";
+import { HoverPopover, Menu, Plugin, PopoverState, TAbstractFile, TFile, addIcon } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
-import { getFolderFile } from "./utils";
-import { DendronVault } from "./dendron-vault";
 import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
 import { parsePath } from "./path";
 import { ViewPlugin } from "@codemirror/view";
@@ -21,10 +10,11 @@ import { RefLivePlugin } from "./ref-live";
 import { createRefMarkdownProcessor } from "./ref-markdown-processor";
 import { resolveRef } from "./ref";
 import { NoteRefRenderChild, createRefRenderer } from "./ref-render";
+import { DendronWorkspace } from "./engine/workspace";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
-  vaultList: DendronVault[] = [];
+  workspace: DendronWorkspace = new DendronWorkspace(this.app);
 
   async onload() {
     await this.loadSettings();
@@ -107,32 +97,16 @@ export default class DendronTreePlugin extends Plugin {
   onunload() {}
 
   onRootFolderChanged() {
-    this.vaultList = this.settings.vaultList.map((path) => {
-      return (
-        this.vaultList.find((vault) => vault.path === path) ?? new DendronVault(this.app, path)
-      );
-    });
-    for (const vault of this.vaultList) {
-      vault.init();
-    }
+    this.workspace.changeVault(this.settings.vaultList);
     this.updateNoteStore();
   }
 
   updateNoteStore() {
-    dendronVaultList.set(this.vaultList);
-  }
-
-  findVaultByParent(parent: TFolder | null): DendronVault | undefined {
-    return this.vaultList.find((vault) => vault.folder === parent);
-  }
-
-  findVaultByParentPath(path: string): DendronVault | undefined {
-    const file = getFolderFile(this.app.vault, path);
-    return file instanceof TFolder ? this.findVaultByParent(file) : undefined;
+    dendronVaultList.set(this.workspace.vaultList);
   }
 
   onCreateFile = async (file: TAbstractFile) => {
-    const vault = this.findVaultByParent(file.parent);
+    const vault = this.workspace.findVaultByParent(file.parent);
     if (vault && vault.onFileCreated(file)) {
       if (this.settings.autoGenerateFrontmatter && file instanceof TFile && file.stat.size === 0)
         await vault.generateFronmatter(file);
@@ -143,7 +117,7 @@ export default class DendronTreePlugin extends Plugin {
   onDeleteFile = (file: TAbstractFile) => {
     // file.parent is null when file is deleted
     const parsed = parsePath(file.path);
-    const vault = this.findVaultByParentPath(parsed.dir);
+    const vault = this.workspace.findVaultByParentPath(parsed.dir);
     if (vault && vault.onFileDeleted(parsed)) {
       this.updateNoteStore();
     }
@@ -151,13 +125,13 @@ export default class DendronTreePlugin extends Plugin {
 
   onRenameFile = (file: TAbstractFile, oldPath: string) => {
     const oldParsed = parsePath(oldPath);
-    const oldVault = this.findVaultByParentPath(oldParsed.dir);
+    const oldVault = this.workspace.findVaultByParentPath(oldParsed.dir);
     let update = false;
     if (oldVault) {
       update = oldVault.onFileDeleted(oldParsed);
     }
 
-    const newVault = this.findVaultByParent(file.parent);
+    const newVault = this.workspace.findVaultByParent(file.parent);
     if (newVault) {
       update = newVault.onFileCreated(file) || update;
     }
@@ -181,14 +155,14 @@ export default class DendronTreePlugin extends Plugin {
   };
 
   onResolveMetadata = (file: TFile) => {
-    const vault = this.findVaultByParent(file.parent);
+    const vault = this.workspace.findVaultByParent(file.parent);
     if (vault && vault.onMetadataChanged(file)) {
       this.updateNoteStore();
     }
   };
 
   revealFile(file: TFile) {
-    const vault = this.findVaultByParent(file.parent);
+    const vault = this.workspace.findVaultByParent(file.parent);
     if (!vault) return;
     const note = vault.tree.getFromFileName(file.basename);
     if (!note) return;
