@@ -4,12 +4,13 @@ import {
   MarkdownRenderChild,
   MarkdownRenderer,
   MarkdownRendererConstructorType,
+  OpenViewState,
   TFile,
   setIcon,
 } from "obsidian";
 import { DendronVault } from "../engine/vault";
 import { openFile } from "../utils";
-import { MaybeNoteRef, RefRange, getRefContentRange, refToLink } from "../engine/ref";
+import { MaybeNoteRef, RefRange, getRefContentRange, anchorToLinkSubpath } from "../engine/ref";
 import { dendronActivityBarName } from "../icons";
 
 const MarkdownRendererConstructor = MarkdownRenderer as unknown as MarkdownRendererConstructorType;
@@ -63,7 +64,13 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
     ) as unknown as HTMLButtonElement;
     buttonComponent.setIcon("lucide-link").setTooltip("Open link");
     buttonComponent.buttonEl.onclick = () => {
-      this.app.workspace.openLinkText(refToLink(this.ref)!, "");
+      const openState: OpenViewState = {};
+      if (this.ref.subpath) {
+        openState.eState = {
+          subpath: anchorToLinkSubpath(this.ref.subpath.start),
+        };
+      }
+      openFile(this.app, this.ref.note?.file, openState);
     };
 
     this.renderer = new RefMarkdownRenderer(this, true);

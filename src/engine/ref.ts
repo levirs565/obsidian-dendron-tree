@@ -149,15 +149,10 @@ export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata
   return range;
 }
 
-export function refToLink(ref: MaybeNoteRef): string | null {
-  if (!ref.note || !ref.note.file) return null;
-  let link = ref.note.file.path;
-  if (ref.subpath) {
-    const anchor = ref.subpath.start;
-    if (anchor.type === "header") link += `#${anchor.name}`;
-    else if (anchor.type === "block") link += `#^${anchor.name}`;
-  }
-  return link;
+export function anchorToLinkSubpath(anchor: RefAnchor): string | null {
+  if (anchor.type === "header") return `#${anchor.name}`;
+  else if (anchor.type === "block") return `#^${anchor.name}`;
+  return "";
 }
 
 export function parseRefSubpath(str: string): RefSubpath | undefined {
