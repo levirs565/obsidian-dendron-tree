@@ -1,8 +1,7 @@
 import { EditorView, PluginValue, ViewUpdate } from "@codemirror/view";
-import { Component, editorLivePreviewField } from "obsidian";
-import DendronTreePlugin from "./main";
+import { App, Component, editorLivePreviewField } from "obsidian";
 import { NoteRefRenderChild, createRefRenderer } from "./ref-render";
-import { resolveRef } from "./ref";
+import { DendronWorkspace } from "../engine/workspace";
 
 interface InternalEmbedWidget {
   end: number;
@@ -20,7 +19,7 @@ interface InternalEmbedWidget {
 }
 
 export class RefLivePlugin implements PluginValue {
-  constructor(public plugin: DendronTreePlugin) {}
+  constructor(public app: App, public workspace: DendronWorkspace) {}
 
   update(update: ViewUpdate) {
     if (!update.state.field(editorLivePreviewField)) {
@@ -48,13 +47,12 @@ export class RefLivePlugin implements PluginValue {
     }
     widget.hacked = true;
 
-    const plugin = this.plugin;
-    const target = resolveRef(plugin, widget.sourcePath, widget.href);
+    const target = this.workspace.resolveRef(widget.sourcePath, widget.href);
 
     if (!target || target.type !== "maybe-note") return;
 
     const loadComponent = (widget: InternalEmbedWidget) => {
-      const renderer = createRefRenderer(target, plugin, widget.containerEl);
+      const renderer = createRefRenderer(target, this.app, widget.containerEl);
       if (renderer instanceof NoteRefRenderChild) renderer.loadFile();
       widget.addChild(renderer);
     };
@@ -74,6 +72,7 @@ export class RefLivePlugin implements PluginValue {
     };
 
     if (widget.containerEl) {
+      console.log("Workaround");
       widget.children[0].unload();
       widget.children.pop();
       loadComponent(widget);

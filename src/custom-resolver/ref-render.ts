@@ -7,18 +7,10 @@ import {
   TFile,
   setIcon,
 } from "obsidian";
-import { DendronVault } from "./engine/vault";
-import { openFile } from "./utils";
-import {
-  MaybeNoteRef,
-  RefAnchor,
-  RefRange,
-  getRefContentRange,
-  parseRefAnchor,
-  refAnchorToLink,
-} from "./ref";
-import { dendronActivityBarName } from "./icons";
-import DendronTreePlugin from "./main";
+import { DendronVault } from "../engine/vault";
+import { openFile } from "../utils";
+import { MaybeNoteRef, RefRange, getRefContentRange, refToLink } from "../engine/ref";
+import { dendronActivityBarName } from "../icons";
 
 const MarkdownRendererConstructor = MarkdownRenderer as unknown as MarkdownRendererConstructorType;
 
@@ -39,19 +31,22 @@ class RefMarkdownRenderer extends MarkdownRendererConstructor {
 export class NoteRefRenderChild extends MarkdownRenderChild {
   previewEl: HTMLElement;
   renderer: RefMarkdownRenderer;
-  startAnchor?: RefAnchor;
-  endAnchor?: RefAnchor;
+  file: TFile;
   range: RefRange | null;
   markdown?: string;
   found = false;
 
   constructor(
-    public app: App,
-    public containerEl: HTMLElement,
-    public file: TFile,
-    public subpath: string
+    public readonly app: App,
+    public readonly containerEl: HTMLElement,
+    public readonly ref: MaybeNoteRef
   ) {
     super(containerEl);
+
+    if (!ref.note || !ref.note.file)
+      throw Error("NoteRefChild only accept ref with non-blank note and file");
+
+    this.file = ref.note.file;
 
     this.containerEl.classList.add("dendron-embed", "markdown-embed", "inline-embed", "is-loaded");
     this.containerEl.setText("");
@@ -68,33 +63,24 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
     ) as unknown as HTMLButtonElement;
     buttonComponent.setIcon("lucide-link").setTooltip("Open link");
     buttonComponent.buttonEl.onclick = () => {
-      this.app.workspace.openLinkText(this.getLink(), "");
+      this.app.workspace.openLinkText(refToLink(this.ref)!, "");
     };
 
     this.renderer = new RefMarkdownRenderer(this, true);
     this.addChild(this.renderer);
-    if (this.subpath.length > 0) {
-      const [startStr, endStr] = subpath.split(":#", 2);
-      this.startAnchor = parseRefAnchor(startStr);
-      if (endStr) this.endAnchor = parseRefAnchor(endStr);
-    }
   }
 
-  getLink() {
-    let link = this.file.basename;
-    if (this.startAnchor) {
-      link += refAnchorToLink(this.startAnchor);
-    }
-    return link;
-  }
-
-  async getContent(): Promise<string | null> {
+  async getContent(): Promise<string> {
     this.markdown = await this.app.vault.cachedRead(this.file);
-    if (this.subpath.length === 0) return this.markdown;
+
+    if (!this.ref.subpath) {
+      this.found = true;
+      return this.markdown;
+    }
 
     const metadata = this.app.metadataCache.getFileCache(this.file);
-    if (metadata && this.startAnchor) {
-      this.range = getRefContentRange(this.startAnchor, this.endAnchor, metadata);
+    if (metadata) {
+      this.range = getRefContentRange(this.ref.subpath, metadata);
       if (this.range) {
         let currentLineIndex = 0;
         while (currentLineIndex < this.range.startLineOffset) {
@@ -102,11 +88,15 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
           this.range.start++;
         }
 
+        this.found = true;
         return this.markdown.substring(this.range.start, this.range.end);
       }
     }
 
-    return null;
+    this.found = false;
+    return "### Unable to find section "
+      .concat(this.ref.subpath.text, " in ")
+      .concat(this.file.basename);
   }
 
   editContent(target: string) {
@@ -128,11 +118,7 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
 
   async loadFile() {
     const content = await this.getContent();
-    this.found = !!content;
-    this.renderer.renderer.set(
-      content ??
-        "### Unable to find section ".concat(this.subpath, " in ").concat(this.file.basename)
-    );
+    this.renderer.renderer.set(content);
   }
 
   onload(): void {
@@ -165,19 +151,10 @@ export class UnresolvedRefRenderChild extends MarkdownRenderChild {
   }
 }
 
-export function createRefRenderer(
-  target: MaybeNoteRef,
-  plugin: DendronTreePlugin,
-  container: HTMLElement
-) {
+export function createRefRenderer(target: MaybeNoteRef, app: App, container: HTMLElement) {
   if (!target.note || !target.note.file) {
-    return new UnresolvedRefRenderChild(plugin.app, container, target.vault, target.path);
+    return new UnresolvedRefRenderChild(app, container, target.vault, target.path);
   } else {
-    return new NoteRefRenderChild(
-      plugin.app,
-      container,
-      target.note.file,
-      target.subpath.slice(1) ?? ""
-    );
+    return new NoteRefRenderChild(app, container, target);
   }
 }

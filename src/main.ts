@@ -1,16 +1,12 @@
-import { HoverPopover, Menu, Plugin, PopoverState, TAbstractFile, TFile, addIcon } from "obsidian";
+import { Menu, Plugin, TAbstractFile, TFile, addIcon } from "obsidian";
 import { DendronView, VIEW_TYPE_DENDRON } from "./view";
 import { activeFile, dendronVaultList } from "./store";
 import { LookupModal } from "./modal/lookup";
 import { dendronActivityBarIcon, dendronActivityBarName } from "./icons";
 import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } from "./settings";
 import { parsePath } from "./path";
-import { ViewPlugin } from "@codemirror/view";
-import { RefLivePlugin } from "./ref-live";
-import { createRefMarkdownProcessor } from "./ref-markdown-processor";
-import { resolveRef } from "./ref";
-import { NoteRefRenderChild, createRefRenderer } from "./ref-render";
 import { DendronWorkspace } from "./engine/workspace";
+import { CustomResolver } from "./custom-resolver";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
@@ -45,11 +41,6 @@ export default class DendronTreePlugin extends Plugin {
 
     this.app.workspace.onLayoutReady(() => {
       this.onRootFolderChanged();
-      this.registerEditorExtension(
-        ViewPlugin.define((v) => {
-          return new RefLivePlugin(this);
-        })
-      );
 
       this.registerEvent(this.app.vault.on("create", this.onCreateFile));
       this.registerEvent(this.app.vault.on("delete", this.onDeleteFile));
@@ -57,41 +48,9 @@ export default class DendronTreePlugin extends Plugin {
       this.registerEvent(this.app.metadataCache.on("resolve", this.onResolveMetadata));
       this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile));
       this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenu));
-
-      const pagePreview = this.app.internalPlugins.getEnabledPluginById("page-preview");
-      if (!pagePreview) return;
-      const originalLinkHover = pagePreview.onLinkHover;
-      const originalLinkHoverBinded = originalLinkHover.bind(pagePreview);
-      pagePreview.onLinkHover = (parent, targetEl, link, sourcePath, state) => {
-        const ref = resolveRef(this, sourcePath, link);
-
-        if (!ref || ref.type !== "maybe-note")
-          return originalLinkHoverBinded(parent, targetEl, link, sourcePath, state);
-
-        if (
-          !(
-            parent.hoverPopover &&
-            parent.hoverPopover.state !== PopoverState.Hidden &&
-            parent.hoverPopover.targetEl === targetEl
-          )
-        ) {
-          const popOver = new HoverPopover(parent, targetEl);
-
-          setTimeout(async () => {
-            if (popOver.state === PopoverState.Hidden) return;
-
-            const container = popOver.hoverEl.createDiv();
-            const component = createRefRenderer(ref, this, container);
-            popOver.addChild(component);
-            if (component instanceof NoteRefRenderChild) await component.loadFile();
-
-            if (popOver.state === PopoverState.Shown) popOver.position();
-          }, 100);
-        }
-      };
     });
 
-    this.registerMarkdownPostProcessor(createRefMarkdownProcessor(this));
+    this.addChild(new CustomResolver(this, this.workspace));
   }
 
   onunload() {}

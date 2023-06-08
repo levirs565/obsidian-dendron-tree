@@ -1,8 +1,21 @@
-import { CachedMetadata, HeadingCache, TFile, parseLinktext } from "obsidian";
-import DendronTreePlugin from "./main";
-import { parsePath } from "./path";
+import { CachedMetadata, HeadingCache, TFile } from "obsidian";
 import { Note } from "./note";
-import { DendronVault } from "./engine/vault";
+import { DendronVault } from "./vault";
+
+export interface MaybeNoteRef {
+  type: "maybe-note";
+  vault: DendronVault;
+  note?: Note;
+  path: string;
+  subpath?: RefSubpath;
+}
+
+export interface FileRef {
+  type: "file";
+  file: TFile;
+}
+
+export type RefTarget = MaybeNoteRef | FileRef;
 
 export type RefAnchor =
   | {
@@ -29,6 +42,12 @@ export interface RefRange {
   startLineOffset: number;
   /* undefined = end of file */
   end: number | undefined;
+}
+
+export interface RefSubpath {
+  text: string;
+  start: RefAnchor;
+  end?: RefAnchor;
 }
 
 export function parseRefAnchor(pos: string): RefAnchor {
@@ -59,48 +78,46 @@ export function parseRefAnchor(pos: string): RefAnchor {
   }
 }
 
-export function getRefContentRange(
-  startAnchor: RefAnchor,
-  endAnchor: RefAnchor | undefined,
-  metadata: CachedMetadata
-): RefRange | null {
+export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata): RefRange | null {
   const range: RefRange = {
     start: 0,
     startLineOffset: 0,
     end: undefined,
   };
 
-  if (startAnchor.type === "begin") {
+  const { start, end } = subpath;
+
+  if (start.type === "begin") {
     range.start = 0;
     range.end = metadata.headings?.[0].position.start.offset;
-  } else if (startAnchor.type === "end" || startAnchor.type === "wildcard") {
+  } else if (start.type === "end" || start.type === "wildcard") {
     return null;
-  } else if (startAnchor.type === "block") {
+  } else if (start.type === "block") {
     if (!metadata.blocks) return null;
 
-    const block = metadata.blocks[startAnchor.name];
+    const block = metadata.blocks[start.name];
     if (!block) return null;
 
     const { position } = block;
 
     range.start = position.start.offset;
     range.end = position.end.offset;
-  } else if (startAnchor.type === "header") {
+  } else if (start.type === "header") {
     if (!metadata.headings) return null;
 
     const startHeadingIndex = metadata.headings.findIndex(
-      ({ heading }) => githubStyleAnchoring(heading) === startAnchor.name
+      ({ heading }) => githubStyleAnchoring(heading) === start.name
     );
     const startHeading = metadata.headings[startHeadingIndex];
 
     if (!startHeading) return null;
 
     range.start = startHeading.position.start.offset;
-    range.startLineOffset = startAnchor.lineOffset;
+    range.startLineOffset = start.lineOffset;
 
     let endHeading: HeadingCache | undefined;
 
-    if (endAnchor && endAnchor.type === "wildcard") {
+    if (end && end.type === "wildcard") {
       endHeading = metadata.headings?.[startHeadingIndex + 1];
     } else {
       endHeading = metadata.headings?.find(
@@ -111,20 +128,20 @@ export function getRefContentRange(
     range.end = endHeading?.position.start.offset;
   }
 
-  if (!endAnchor) return range;
+  if (!end) return range;
 
-  if (endAnchor.type === "begin") {
+  if (end.type === "begin") {
     return null;
-  } else if (endAnchor.type === "end") {
+  } else if (end.type === "end") {
     range.end = undefined;
-  } else if (endAnchor.type === "header") {
+  } else if (end.type === "header") {
     const heading = metadata.headings?.find(
-      ({ heading }) => githubStyleAnchoring(heading) === endAnchor.name
+      ({ heading }) => githubStyleAnchoring(heading) === end.name
     );
     if (!heading) return null;
     range.end = heading?.position.end.offset;
-  } else if (endAnchor.type === "block") {
-    const block = metadata.blocks?.[endAnchor.name];
+  } else if (end.type === "block") {
+    const block = metadata.blocks?.[end.name];
     if (!block) return null;
     range.end = block?.position.end.offset;
   }
@@ -132,10 +149,31 @@ export function getRefContentRange(
   return range;
 }
 
-export function refAnchorToLink(anchor: RefAnchor): string {
-  if (anchor.type === "header") return `#${anchor.name}`;
-  else if (anchor.type === "block") return `#^${anchor.name}`;
-  return "";
+export function refToLink(ref: MaybeNoteRef): string | null {
+  if (!ref.note || !ref.note.file) return null;
+  let link = ref.note.file.path;
+  if (ref.subpath) {
+    const anchor = ref.subpath.start;
+    if (anchor.type === "header") link += `#${anchor.name}`;
+    else if (anchor.type === "block") link += `#^${anchor.name}`;
+  }
+  return link;
+}
+
+export function parseRefSubpath(str: string): RefSubpath | undefined {
+  if (str.length > 0) {
+    const [startStr, endStr] = str.split(":#", 2);
+    const start = parseRefAnchor(startStr);
+
+    let end: RefAnchor | undefined;
+    if (endStr) end = parseRefAnchor(endStr);
+    return {
+      text: str,
+      start,
+      end,
+    };
+  }
+  return undefined;
 }
 
 function githubStyleAnchoring(title: string) {
@@ -144,48 +182,4 @@ function githubStyleAnchoring(title: string) {
     .filter((x) => x.length > 0)
     .map((x) => x.toLowerCase())
     .join("-");
-}
-
-export interface MaybeNoteRef {
-  type: "maybe-note";
-  vault: DendronVault;
-  note?: Note;
-  path: string;
-  subpath: string;
-}
-
-export interface FileRef {
-  type: "file";
-  file: TFile;
-}
-
-export type RefTarget = MaybeNoteRef | FileRef;
-
-export function resolveRef(
-  plugin: DendronTreePlugin,
-  sourcePath: string,
-  link: string
-): RefTarget | null {
-  const { dir: vaultDir } = parsePath(sourcePath);
-  const currentVault = plugin.findVaultByParentPath(vaultDir);
-
-  if (!currentVault) return null;
-
-  const { path, subpath } = parseLinktext(link);
-  const target = plugin.app.metadataCache.getFirstLinkpathDest(path, sourcePath);
-
-  if (target && target.extension !== "md")
-    return {
-      type: "file",
-      file: target,
-    };
-
-  const note = currentVault.tree.getFromFileName(path);
-  return {
-    type: "maybe-note",
-    vault: currentVault,
-    note,
-    path,
-    subpath,
-  };
 }
