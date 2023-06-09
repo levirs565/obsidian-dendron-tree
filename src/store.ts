@@ -6,7 +6,7 @@ import { DendronVault } from "./engine/vault";
 export const plugin = writable<DendronTreePlugin>();
 export const getPlugin = () => get(plugin);
 
-export const activeFile = writable<TFile>();
+export const activeFile = writable<TFile | null>();
 
 export const dendronVaultList = writable<DendronVault[]>([]);
 export const getDendronVaultList = () => get(dendronVaultList);

@@ -47,7 +47,7 @@ export default class DendronTreePlugin extends Plugin {
       this.registerEvent(this.app.vault.on("delete", this.onDeleteFile));
       this.registerEvent(this.app.vault.on("rename", this.onRenameFile));
       this.registerEvent(this.app.metadataCache.on("resolve", this.onResolveMetadata));
-      this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile));
+      this.registerEvent(this.app.workspace.on("file-open", this.onOpenFile, this));
       this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenu));
     });
 
@@ -108,10 +108,10 @@ export default class DendronTreePlugin extends Plugin {
     if (update) this.updateNoteStore();
   };
 
-  onOpenFile = (file: TFile) => {
+  onOpenFile(file: TFile | null) {
     activeFile.set(file);
-    if (this.settings.autoReveal) this.revealFile(file);
-  };
+    if (file && this.settings.autoReveal) this.revealFile(file);
+  }
 
   onFileMenu = (menu: Menu, file: TAbstractFile) => {
     if (!(file instanceof TFile)) return;
