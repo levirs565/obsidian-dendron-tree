@@ -8,7 +8,6 @@ import {
   TFile,
   setIcon,
 } from "obsidian";
-import { DendronVault } from "../engine/vault";
 import { openFile } from "../utils";
 import { MaybeNoteRef, RefRange, getRefContentRange, anchorToLinkSubpath } from "../engine/ref";
 import { dendronActivityBarName } from "../icons";
@@ -141,7 +140,7 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
 }
 
 export class UnresolvedRefRenderChild extends MarkdownRenderChild {
-  constructor(app: App, containerEl: HTMLElement, vault: DendronVault, path: string) {
+  constructor(app: App, containerEl: HTMLElement, target: MaybeNoteRef) {
     super(containerEl);
 
     this.containerEl.classList.add("dendron-embed", "file-embed", "mod-empty", "is-loaded");
@@ -150,7 +149,20 @@ export class UnresolvedRefRenderChild extends MarkdownRenderChild {
     const icon = this.containerEl.createDiv("dendron-icon");
     setIcon(icon, dendronActivityBarName);
     const content = this.containerEl.createDiv();
-    content.setText(`"${path}" is not created yet. Click to create.`);
+
+    const { vaultName, vault, path } = target;
+
+    if (vaultName === "") {
+      content.setText("Vault name are unspecified in link.");
+      return;
+    } else if (!vault) {
+      content.setText(`Vault ${vaultName} are not found.`);
+      return;
+    } else if (path === "") {
+      content.setText("Note path are unspecified in link.");
+      return;
+    }
+    content.setText(`"${target.path}" is not created yet. Click to create.`);
 
     this.containerEl.onclick = () => {
       vault.createNote(path).then((file) => openFile(app, file));
@@ -160,7 +172,7 @@ export class UnresolvedRefRenderChild extends MarkdownRenderChild {
 
 export function createRefRenderer(target: MaybeNoteRef, app: App, container: HTMLElement) {
   if (!target.note || !target.note.file) {
-    return new UnresolvedRefRenderChild(app, container, target.vault, target.path);
+    return new UnresolvedRefRenderChild(app, container, target);
   } else {
     return new NoteRefRenderChild(app, container, target);
   }

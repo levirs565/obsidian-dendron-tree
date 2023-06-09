@@ -4,7 +4,8 @@ import { DendronVault } from "./vault";
 
 export interface MaybeNoteRef {
   type: "maybe-note";
-  vault: DendronVault;
+  vaultName: string;
+  vault?: DendronVault;
   note?: Note;
   path: string;
   subpath?: RefSubpath;

@@ -4,6 +4,8 @@ import { getFolderFile } from "../utils";
 import { RefTarget, parseRefSubpath } from "./ref";
 import { parsePath } from "../path";
 
+const DENDRON_URI_START = "dendron://";
+
 export class DendronWorkspace {
   vaultList: DendronVault[] = [];
 
@@ -32,10 +34,32 @@ export class DendronWorkspace {
   }
 
   resolveRef(sourcePath: string, link: string): RefTarget | null {
-    const { dir: vaultDir } = parsePath(sourcePath);
-    const currentVault = this.findVaultByParentPath(vaultDir);
+    if (link.startsWith(DENDRON_URI_START)) {
+      const [vaultName, rest] = link.slice(DENDRON_URI_START.length).split("/", 2) as (
+        | string
+        | undefined
+      )[];
+      const { path, subpath } = rest
+        ? parseLinktext(rest)
+        : {
+            path: undefined,
+            subpath: undefined,
+          };
+      const vault = this.vaultList.find(({ config }) => config.name === vaultName);
 
-    if (!currentVault) return null;
+      return {
+        type: "maybe-note",
+        vaultName: vaultName ?? "",
+        vault,
+        note: path ? vault?.tree?.getFromFileName(path) : undefined,
+        path: path ?? "",
+        subpath: subpath ? parseRefSubpath(subpath) : undefined,
+      };
+    }
+    const { dir: vaultDir } = parsePath(sourcePath);
+    const vault = this.findVaultByParentPath(vaultDir);
+
+    if (!vault) return null;
 
     const { path, subpath } = parseLinktext(link);
     const target = this.app.metadataCache.getFirstLinkpathDest(path, sourcePath);
@@ -46,10 +70,11 @@ export class DendronWorkspace {
         file: target,
       };
 
-    const note = currentVault.tree.getFromFileName(path);
+    const note = vault.tree.getFromFileName(path);
     return {
       type: "maybe-note",
-      vault: currentVault,
+      vaultName: vault.config.name,
+      vault: vault,
       note,
       path,
       subpath: parseRefSubpath(subpath.slice(1) ?? ""),
