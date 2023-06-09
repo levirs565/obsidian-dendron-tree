@@ -183,6 +183,13 @@ describe("tree class", () => {
     expect(tree.getFromFileName("abc.def.ghi")?.name).toBe("ghi");
     expect(tree.getFromFileName("abc.def.mno")).toBeUndefined();
   });
+  it("get note using blank path", () => {
+
+    const tree = new NoteTree();
+    tree.addFile(createTFile("abc.def.jkl.md"));
+    tree.addFile(createTFile("abc.def.ghi.md"));
+    expect(tree.getFromFileName("")).toBeUndefined()
+  })
   it("delete note if do not have children", () => {
     const tree = new NoteTree();
     tree.addFile(createTFile("abc.md"));
