@@ -13,12 +13,14 @@ export class SelectVaultModal extends SuggestModal<DendronVault> {
 
   getSuggestions(query: string): DendronVault[] | Promise<DendronVault[]> {
     const queryLowercase = query.toLowerCase();
-    return this.workspace.vaultList.filter((value) =>
-      value.path.toLowerCase().includes(queryLowercase)
+    return this.workspace.vaultList.filter(
+      (value) =>
+        value.config.path.toLowerCase().contains(queryLowercase) ||
+        value.config.name.toLowerCase().contains(queryLowercase)
     );
   }
   renderSuggestion(value: DendronVault, el: HTMLElement) {
-    el.createEl("div", { text: value.formattedPath });
+    el.createEl("div", { text: value.config.name });
   }
   onChooseSuggestion(item: DendronVault, evt: MouseEvent | KeyboardEvent) {
     this.onSelected(item);

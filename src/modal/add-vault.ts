@@ -1,4 +1,5 @@
 import { App, Modal, Notice, PopoverSuggest, Setting, TFolder, TextComponent } from "obsidian";
+import { VaultConfig } from "src/engine/vault";
 
 class FolderSuggester extends PopoverSuggest<TFolder> {
   constructor(
@@ -56,8 +57,13 @@ export class AddVaultModal extends Modal {
   folder?: TFolder;
   nameText: TextComponent;
 
-  constructor(app: App) {
+  constructor(app: App, public onSubmit: (config: VaultConfig) => boolean) {
     super(app);
+  }
+
+  generateName({ path, name }: TFolder) {
+    if (path === "/") return "root";
+    return name;
   }
 
   onOpen(): void {
@@ -65,8 +71,11 @@ export class AddVaultModal extends Modal {
     new Setting(this.contentEl).setName("Vault Path").addText((text) => {
       new FolderSuggester(this.app, text.inputEl, (newFolder) => {
         const currentName = this.nameText.getValue();
-        if (currentName.length === 0 || (this.folder && currentName === this.folder.name))
-          this.nameText.setValue(newFolder.name);
+        if (
+          currentName.length === 0 ||
+          (this.folder && currentName === this.generateName(this.folder))
+        )
+          this.nameText.setValue(this.generateName(newFolder));
 
         this.folder = newFolder;
       });
@@ -79,10 +88,19 @@ export class AddVaultModal extends Modal {
         .setCta()
         .setButtonText("Add Text")
         .onClick(() => {
-          if (!this.folder || this.nameText.getValue().trim().length === 0) {
+          const name = this.nameText.getValue();
+          if (!this.folder || name.trim().length === 0) {
             new Notice("Please specify Vault Path and Vault Name");
             return;
           }
+
+          if (
+            this.onSubmit({
+              path: this.folder.path,
+              name,
+            })
+          )
+            this.close();
         });
     });
   }

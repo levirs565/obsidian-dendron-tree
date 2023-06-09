@@ -9,7 +9,7 @@ export class InvalidRootModal extends Modal {
   onOpen(): void {
     this.contentEl.createEl("h1", { text: "Invalid Root" });
     this.contentEl.createEl("p", {
-      text: `"${this.dendronVault.formattedPath}" is not folder. Do you want to create this folder?`,
+      text: `"${this.dendronVault.config.path}" is not folder. Do you want to create this folder?`,
     });
     new Setting(this.contentEl).addButton((button) => {
       button

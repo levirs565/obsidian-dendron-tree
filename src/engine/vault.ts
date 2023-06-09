@@ -4,12 +4,17 @@ import { InvalidRootModal } from "../modal/invalid-root";
 import { generateUUID, getFolderFile } from "../utils";
 import { ParsedPath } from "../path";
 
+export interface VaultConfig {
+  path: string;
+  name: string;
+}
+
 export class DendronVault {
   folder: TFolder;
   tree: NoteTree;
   isIniatialized = false;
 
-  constructor(public app: App, public path: string) {}
+  constructor(public app: App, public config: VaultConfig) {}
 
   private resolveMetadata(file: TFile): NoteMetadata | undefined {
     const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
@@ -19,16 +24,12 @@ export class DendronVault {
     };
   }
 
-  get formattedPath() {
-    return this.path === "" ? "/" : this.path;
-  }
-
   init() {
     if (this.isIniatialized) return;
 
     this.tree = new NoteTree();
 
-    const root = getFolderFile(this.app.vault, this.path);
+    const root = getFolderFile(this.app.vault, this.config.path);
     if (!(root instanceof TFolder)) {
       new InvalidRootModal(this).open();
       return;
@@ -45,11 +46,11 @@ export class DendronVault {
   }
 
   async createRootFolder() {
-    return await this.app.vault.createFolder(this.path);
+    return await this.app.vault.createFolder(this.config.path);
   }
 
   async createNote(baseName: string) {
-    const filePath = `${this.path}/${baseName}.md`;
+    const filePath = `${this.config.path}/${baseName}.md`;
     return await this.app.vault.create(filePath, "");
   }
 

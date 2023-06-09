@@ -11,11 +11,7 @@ interface LookupItem {
 }
 
 export class LookupModal extends SuggestModal<LookupItem | null> {
-  constructor(
-    app: App,
-    private workspace: DendronWorkspace,
-    private initialQuery: string = ""
-  ) {
+  constructor(app: App, private workspace: DendronWorkspace, private initialQuery: string = "") {
     super(app);
   }
 
@@ -68,7 +64,7 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
       el.createEl("small", {
         text: item
           ? item.note.getPath() +
-            (this.workspace.vaultList.length > 1 ? ` (${item.vault.formattedPath})` : "")
+            (this.workspace.vaultList.length > 1 ? ` (${item.vault.config.name})` : "")
           : "Note does not exist",
         cls: "suggestion-content",
       });

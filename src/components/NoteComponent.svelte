@@ -113,7 +113,7 @@
       />
     {/if}
     <div class="tree-item-inner">
-      {note.title + (isRoot && $showVaultPath ? ` (${vault.formattedPath})` : "")}
+      {note.title + (isRoot && $showVaultPath ? ` (${vault.config.name})` : "")}
     </div>
     {#if !note.file}
       <div class="dendron-tree-not-found" />

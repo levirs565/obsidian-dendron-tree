@@ -7,7 +7,7 @@
   const children: Record<string, NoteComponent> = {};
 
   export function focusTo(vault: DendronVault, note: Note) {
-    const vaultComponent = children[vault.path];
+    const vaultComponent = children[vault.config.name];
     if (!vaultComponent) return;
 
     const pathNotes = note.getPathNotes();
@@ -17,7 +17,7 @@
 </script>
 
 <div>
-  {#each $dendronVaultList as vault (vault.path)}
-    <NoteComponent note={vault.tree.root} isRoot {vault} bind:this={children[vault.path]} />
+  {#each $dendronVaultList as vault (vault.config.name)}
+    <NoteComponent note={vault.tree.root} isRoot {vault} bind:this={children[vault.config.name]} />
   {/each}
 </div>

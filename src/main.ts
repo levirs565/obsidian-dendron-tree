@@ -15,11 +15,7 @@ export default class DendronTreePlugin extends Plugin {
 
   async onload() {
     await this.loadSettings();
-    if (this.settings.vaultPath) {
-      this.settings.vaultList = [this.settings.vaultPath];
-      this.settings.vaultPath = undefined;
-      await this.saveSettings();
-    }
+    await this.migrateSettings();
 
     addIcon(dendronActivityBarName, dendronActivityBarIcon);
 
@@ -52,6 +48,36 @@ export default class DendronTreePlugin extends Plugin {
     });
 
     this.configureCustomResolver();
+  }
+
+  async migrateSettings() {
+    function pathToVaultConfig(path: string) {
+      const { name } = parsePath(path);
+      if (name.length === 0)
+        return {
+          name: "root",
+          path: "/",
+        };
+      let processed = path;
+      if (processed.endsWith("/")) processed = processed.slice(0, -1);
+      if (processed.startsWith("/") && processed.length > 1) processed = processed.slice(1);
+      return {
+        name,
+        path: processed,
+      };
+    }
+
+    if (this.settings.vaultPath) {
+      this.settings.vaultList = [pathToVaultConfig(this.settings.vaultPath)];
+      this.settings.vaultPath = undefined;
+      await this.saveSettings();
+    }
+    if (this.settings.vaultList.length > 0 && typeof this.settings.vaultList[0] === "string") {
+      this.settings.vaultList = (this.settings.vaultList as unknown as string[]).map((path) =>
+        pathToVaultConfig(path)
+      );
+      await this.saveSettings();
+    }
   }
 
   onunload() {}

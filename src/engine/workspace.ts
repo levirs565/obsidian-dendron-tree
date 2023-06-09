@@ -1,5 +1,5 @@
 import { App, TFolder, parseLinktext } from "obsidian";
-import { DendronVault } from "./vault";
+import { DendronVault, VaultConfig } from "./vault";
 import { getFolderFile } from "../utils";
 import { RefTarget, parseRefSubpath } from "./ref";
 import { parsePath } from "../path";
@@ -9,10 +9,12 @@ export class DendronWorkspace {
 
   constructor(public app: App) {}
 
-  changeVault(vaultList: string[]) {
-    this.vaultList = vaultList.map((path) => {
+  changeVault(vaultList: VaultConfig[]) {
+    this.vaultList = vaultList.map((config) => {
       return (
-        this.vaultList.find((vault) => vault.path === path) ?? new DendronVault(this.app, path)
+        this.vaultList.find(
+          (vault) => vault.config.name === config.name && vault.config.path === config.path
+        ) ?? new DendronVault(this.app, config)
       );
     });
     for (const vault of this.vaultList) {
