@@ -61,4 +61,13 @@ declare module "obsidian" {
     registerEditorExtension(extension: Extension): void;
     unregisterEditorExtension(extension: Extension): void;
   }
+
+  interface PopoverSuggest<T> {
+    suggestEl: HTMLDivElement;
+    suggestions: {
+      setSuggestions(list: T[]);
+    };
+    setAutoDestroy(el: HTMLElement)
+    reposition({ left: number, right: number, top: number, bottom: number });
+  }
 }

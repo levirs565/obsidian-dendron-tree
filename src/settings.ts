@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import DendronTreePlugin from "./main";
+import { AddVaultModal } from "./modal/add-vault";
 
 export interface DendronTreePluginSettings {
   /**
@@ -78,24 +79,11 @@ export class DendronTreeSettingTab extends PluginSettingTab {
           });
         });
     }
-    let newVault = "";
-    new Setting(containerEl)
-      .setName("Directory: ")
-      .addText((text) => {
-        text.onChange((value) => {
-          newVault = value;
-        });
-      })
-      .addButton((btn) => {
-        btn.setButtonText("Add").onClick(async () => {
-          const list = this.plugin.settings.vaultList;
-          if (!list.includes(newVault)) {
-            list.push(newVault);
-            await this.plugin.saveSettings();
-          }
-          this.display();
-        });
+    new Setting(containerEl).addButton((btn) => {
+      btn.setButtonText("Add Vault").onClick(() => {
+        new AddVaultModal(this.app).open();
       });
+    });
   }
   hide() {
     super.hide();

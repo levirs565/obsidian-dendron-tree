@@ -15,3 +15,7 @@
 .dendron-embed.markdown-embed .dendron-icon {
   margin: 4px;
 }
+
+.dendron-folder-suggest .suggestion-item {
+  word-break: break-all;
+}
