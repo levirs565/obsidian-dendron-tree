@@ -11,6 +11,7 @@ import { CustomResolver } from "./custom-resolver";
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
   workspace: DendronWorkspace = new DendronWorkspace(this.app);
+  customResolver?: CustomResolver;
 
   async onload() {
     await this.loadSettings();
@@ -50,7 +51,7 @@ export default class DendronTreePlugin extends Plugin {
       this.registerEvent(this.app.workspace.on("file-menu", this.onFileMenu));
     });
 
-    this.addChild(new CustomResolver(this, this.workspace));
+    this.configureCustomResolver();
   }
 
   onunload() {}
@@ -58,6 +59,16 @@ export default class DendronTreePlugin extends Plugin {
   onRootFolderChanged() {
     this.workspace.changeVault(this.settings.vaultList);
     this.updateNoteStore();
+  }
+
+  configureCustomResolver() {
+    if (this.settings.customResolver && !this.customResolver) {
+      this.customResolver = new CustomResolver(this, this.workspace);
+      this.addChild(this.customResolver);
+    } else if (!this.settings.customResolver && this.customResolver) {
+      this.removeChild(this.customResolver);
+      this.customResolver = undefined;
+    }
   }
 
   updateNoteStore() {

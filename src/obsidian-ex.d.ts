@@ -56,4 +56,9 @@ declare module "obsidian" {
   interface MarkdownRendererConstructorType {
     new (app: App, container: HTMLElement, queed: boolean): MarkdownRenderer;
   }
+
+  interface Workspace {
+    registerEditorExtension(extension: Extension): void;
+    unregisterEditorExtension(extension: Extension): void;
+  }
 }

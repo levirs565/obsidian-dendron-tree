@@ -1,4 +1,4 @@
-import { Component, PagePreviewPlugin, Plugin, Workspace } from "obsidian";
+import { Component, MarkdownPreviewRenderer, PagePreviewPlugin, Plugin, Workspace } from "obsidian";
 import { DendronWorkspace } from "../engine/workspace";
 import { createLinkHoverHandler } from "./link-hover";
 import { ViewPlugin } from "@codemirror/view";
@@ -10,6 +10,10 @@ export class CustomResolver extends Component {
   pagePreviewPlugin?: PagePreviewPlugin;
   originalLinkHover: PagePreviewPlugin["onLinkHover"];
   originalOpenLinkText: Workspace["openLinkText"];
+  markdownPostProcessor = createRefMarkdownProcessor(this.plugin.app, this.workspace);
+  editorExtenstion = ViewPlugin.define((v) => {
+    return new RefLivePlugin(this.plugin.app, this.workspace);
+  });
 
   constructor(public plugin: Plugin, public workspace: DendronWorkspace) {
     super();
@@ -17,11 +21,7 @@ export class CustomResolver extends Component {
 
   onload(): void {
     this.plugin.app.workspace.onLayoutReady(() => {
-      this.plugin.registerEditorExtension(
-        ViewPlugin.define((v) => {
-          return new RefLivePlugin(this.plugin.app, this.workspace);
-        })
-      );
+      this.plugin.app.workspace.registerEditorExtension(this.editorExtenstion);
 
       this.pagePreviewPlugin = this.plugin.app.internalPlugins.getEnabledPluginById("page-preview");
       if (!this.pagePreviewPlugin) return;
@@ -34,9 +34,7 @@ export class CustomResolver extends Component {
       );
     });
 
-    this.plugin.registerMarkdownPostProcessor(
-      createRefMarkdownProcessor(this.plugin.app, this.workspace)
-    );
+    MarkdownPreviewRenderer.registerPostProcessor(this.markdownPostProcessor);
 
     this.originalOpenLinkText = this.plugin.app.workspace.openLinkText;
     this.plugin.app.workspace.openLinkText = createLinkOpenHandler(
@@ -47,6 +45,9 @@ export class CustomResolver extends Component {
 
   onunload(): void {
     this.plugin.app.workspace.openLinkText = this.originalOpenLinkText;
+    MarkdownPreviewRenderer.unregisterPostProcessor(this.markdownPostProcessor);
+    this.plugin.app.workspace.unregisterEditorExtension(this.editorExtenstion);
+
     if (!this.pagePreviewPlugin) return;
     this.pagePreviewPlugin.onLinkHover = this.originalLinkHover;
   }

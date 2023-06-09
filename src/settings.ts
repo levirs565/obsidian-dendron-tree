@@ -9,12 +9,14 @@ export interface DendronTreePluginSettings {
   vaultList: string[];
   autoGenerateFrontmatter: boolean;
   autoReveal: boolean;
+  customResolver: boolean;
 }
 
 export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
   vaultList: [""],
   autoGenerateFrontmatter: true,
   autoReveal: true,
+  customResolver: false,
 };
 
 export class DendronTreeSettingTab extends PluginSettingTab {
@@ -48,6 +50,18 @@ export class DendronTreeSettingTab extends PluginSettingTab {
       .addToggle((toggle) => {
         toggle.setValue(this.plugin.settings.autoReveal).onChange(async (value) => {
           this.plugin.settings.autoReveal = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
+    new Setting(containerEl)
+      .setName("Custom Resolver")
+      .setDesc(
+        "Use custom resolver to resolve ref/embed and link. (Please reopen editor after change this setting)"
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.customResolver).onChange(async (value) => {
+          this.plugin.settings.customResolver = value;
           await this.plugin.saveSettings();
         });
       });
@@ -86,5 +100,6 @@ export class DendronTreeSettingTab extends PluginSettingTab {
   hide() {
     super.hide();
     this.plugin.onRootFolderChanged();
+    this.plugin.configureCustomResolver();
   }
 }
