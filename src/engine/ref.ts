@@ -1,6 +1,7 @@
 import { CachedMetadata, HeadingCache, TFile } from "obsidian";
 import { Note } from "./note";
 import { DendronVault } from "./vault";
+import GithubSlugger from "github-slugger";
 
 export interface MaybeNoteRef {
   type: "maybe-note";
@@ -79,6 +80,15 @@ export function parseRefAnchor(pos: string): RefAnchor {
   }
 }
 
+function findHeadingByGithubSlug(headings: HeadingCache[], name: string) {
+  const slugger = new GithubSlugger();
+  const index = headings.findIndex(({ heading }) => slugger.slug(heading) === name);
+  return {
+    index,
+    heading: headings[index],
+  };
+}
+
 export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata): RefRange | null {
   const range: RefRange = {
     start: 0,
@@ -106,10 +116,10 @@ export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata
   } else if (start.type === "header") {
     if (!metadata.headings) return null;
 
-    const startHeadingIndex = metadata.headings.findIndex(
-      ({ heading }) => githubStyleAnchoring(heading) === start.name
+    const { index: startHeadingIndex, heading: startHeading } = findHeadingByGithubSlug(
+      metadata.headings,
+      start.name
     );
-    const startHeading = metadata.headings[startHeadingIndex];
 
     if (!startHeading) return null;
 
@@ -136,9 +146,8 @@ export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata
   } else if (end.type === "end") {
     range.end = undefined;
   } else if (end.type === "header") {
-    const heading = metadata.headings?.find(
-      ({ heading }) => githubStyleAnchoring(heading) === end.name
-    );
+    if (!metadata.headings) return null;
+    const { heading } = findHeadingByGithubSlug(metadata.headings, end.name);
     if (!heading) return null;
     range.end = heading?.position.end.offset;
   } else if (end.type === "block") {
@@ -170,12 +179,4 @@ export function parseRefSubpath(str: string): RefSubpath | undefined {
     };
   }
   return undefined;
-}
-
-function githubStyleAnchoring(title: string) {
-  return title
-    .split(" ")
-    .filter((x) => x.length > 0)
-    .map((x) => x.toLowerCase())
-    .join("-");
 }
