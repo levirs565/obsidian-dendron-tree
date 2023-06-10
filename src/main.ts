@@ -22,7 +22,6 @@ export default class DendronTreePlugin extends Plugin {
     this.addCommand({
       id: "dendron-lookup",
       name: "Lookup Note",
-      hotkeys: [{ modifiers: ["Ctrl"], key: "l" }],
       callback: () => {
         new LookupModal(this.app, this.workspace).open();
       },
