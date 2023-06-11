@@ -10,12 +10,12 @@ import {
 } from "@codemirror/view";
 import { editorInfoField, App } from "obsidian";
 import { editorLivePreviewField } from "obsidian";
-import { RefTarget } from "src/engine/ref";
-import { DendronWorkspace } from "src/engine/workspace";
+import { RefTarget } from "../engine/ref";
+import { DendronWorkspace } from "../engine/workspace";
+import { renderLinkTitle } from "./link-render";
 
 class LinkWidget extends WidgetType {
   containerEl: HTMLSpanElement;
-  titleEl: HTMLSpanElement;
   ref: RefTarget | null;
 
   constructor(
@@ -28,33 +28,19 @@ class LinkWidget extends WidgetType {
     super();
   }
 
-  resolveLinkTitle() {
-    if (this.title) {
-      this.titleEl.setText(this.title);
-      return;
-    }
-    this.ref = this.workspace.resolveRef(this.sourcePath, this.href);
-    if (!this.ref || this.ref.type !== "maybe-note" || !this.ref.note?.file) {
-      this.titleEl.setText(this.href);
-      return;
-    }
-
-    const title = this.app.metadataCache.getFileCache(this.ref.note.file)?.frontmatter?.["title"];
-    this.titleEl.setText(title ?? this.href);
-  }
-
   initDOM() {
     this.containerEl = createSpan(
       {
         cls: "cm-hmd-internal-link",
       },
       (el) => {
-        this.titleEl = el.createSpan({
+        el.createSpan({
           cls: "cm-underline",
+          text: renderLinkTitle(this.app, this.workspace, this.href, this.title, this.sourcePath),
         });
       }
     );
-    this.resolveLinkTitle();
+
     this.containerEl.addEventListener("click", () => {
       this.app.workspace.openLinkText(this.href, this.sourcePath);
     });

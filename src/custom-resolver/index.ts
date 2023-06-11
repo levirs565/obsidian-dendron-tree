@@ -6,12 +6,14 @@ import { RefLivePlugin } from "./ref-live";
 import { createRefMarkdownProcessor } from "./ref-markdown-processor";
 import { createLinkOpenHandler } from "./link-open";
 import { LinkLivePlugin } from "./link-live";
+import { createLinkMarkdownProcessor } from "./link-markdown-processor";
 
 export class CustomResolver extends Component {
   pagePreviewPlugin?: PagePreviewPlugin;
   originalLinkHover: PagePreviewPlugin["onLinkHover"];
   originalOpenLinkText: Workspace["openLinkText"];
-  markdownPostProcessor = createRefMarkdownProcessor(this.plugin.app, this.workspace);
+  refPostProcessor = createRefMarkdownProcessor(this.plugin.app, this.workspace);
+  linkPostProcessor = createLinkMarkdownProcessor(this.plugin.app, this.workspace);
   refEditorExtenstion = ViewPlugin.define((v) => {
     return new RefLivePlugin(this.plugin.app, this.workspace);
   });
@@ -44,7 +46,8 @@ export class CustomResolver extends Component {
       );
     });
 
-    MarkdownPreviewRenderer.registerPostProcessor(this.markdownPostProcessor);
+    MarkdownPreviewRenderer.registerPostProcessor(this.refPostProcessor);
+    MarkdownPreviewRenderer.registerPostProcessor(this.linkPostProcessor);
 
     this.originalOpenLinkText = this.plugin.app.workspace.openLinkText;
     this.plugin.app.workspace.openLinkText = createLinkOpenHandler(
@@ -55,7 +58,8 @@ export class CustomResolver extends Component {
 
   onunload(): void {
     this.plugin.app.workspace.openLinkText = this.originalOpenLinkText;
-    MarkdownPreviewRenderer.unregisterPostProcessor(this.markdownPostProcessor);
+    MarkdownPreviewRenderer.unregisterPostProcessor(this.linkPostProcessor);
+    MarkdownPreviewRenderer.unregisterPostProcessor(this.refPostProcessor);
     this.plugin.app.workspace.unregisterEditorExtension(this.linkEditorExtenstion);
     this.plugin.app.workspace.unregisterEditorExtension(this.refEditorExtenstion);
 
