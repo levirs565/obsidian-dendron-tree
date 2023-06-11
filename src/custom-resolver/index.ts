@@ -5,15 +5,24 @@ import { ViewPlugin } from "@codemirror/view";
 import { RefLivePlugin } from "./ref-live";
 import { createRefMarkdownProcessor } from "./ref-markdown-processor";
 import { createLinkOpenHandler } from "./link-open";
+import { LinkLivePlugin } from "./link-live";
 
 export class CustomResolver extends Component {
   pagePreviewPlugin?: PagePreviewPlugin;
   originalLinkHover: PagePreviewPlugin["onLinkHover"];
   originalOpenLinkText: Workspace["openLinkText"];
   markdownPostProcessor = createRefMarkdownProcessor(this.plugin.app, this.workspace);
-  editorExtenstion = ViewPlugin.define((v) => {
+  refEditorExtenstion = ViewPlugin.define((v) => {
     return new RefLivePlugin(this.plugin.app, this.workspace);
   });
+  linkEditorExtenstion = ViewPlugin.define(
+    (view) => {
+      return new LinkLivePlugin(this.plugin.app, this.workspace, view);
+    },
+    {
+      decorations: (value) => value.decorations,
+    }
+  );
 
   constructor(public plugin: Plugin, public workspace: DendronWorkspace) {
     super();
@@ -21,7 +30,8 @@ export class CustomResolver extends Component {
 
   onload(): void {
     this.plugin.app.workspace.onLayoutReady(() => {
-      this.plugin.app.workspace.registerEditorExtension(this.editorExtenstion);
+      this.plugin.app.workspace.registerEditorExtension(this.refEditorExtenstion);
+      this.plugin.app.workspace.registerEditorExtension(this.linkEditorExtenstion);
 
       this.pagePreviewPlugin = this.plugin.app.internalPlugins.getEnabledPluginById("page-preview");
       if (!this.pagePreviewPlugin) return;
@@ -46,7 +56,8 @@ export class CustomResolver extends Component {
   onunload(): void {
     this.plugin.app.workspace.openLinkText = this.originalOpenLinkText;
     MarkdownPreviewRenderer.unregisterPostProcessor(this.markdownPostProcessor);
-    this.plugin.app.workspace.unregisterEditorExtension(this.editorExtenstion);
+    this.plugin.app.workspace.unregisterEditorExtension(this.linkEditorExtenstion);
+    this.plugin.app.workspace.unregisterEditorExtension(this.refEditorExtenstion);
 
     if (!this.pagePreviewPlugin) return;
     this.pagePreviewPlugin.onLinkHover = this.originalLinkHover;
