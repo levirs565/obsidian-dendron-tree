@@ -7,7 +7,7 @@
   import { openFile } from "../utils";
   import { LookupModal } from "../modal/lookup";
   import { DendronVault } from "src/engine/vault";
-  import { tick } from "svelte";
+  import { createEventDispatcher, tick } from "svelte";
 
   export let note: Note;
   export let isRoot: boolean = false;
@@ -89,6 +89,12 @@
         block: "center",
       });
   };
+
+  interface $$Events {
+    openNote: CustomEvent<Note>;
+  }
+
+  const dispatcher = createEventDispatcher();
 </script>
 
 <div class="tree-item is-clickable" class:is-collapsed={isCollapsed}>
@@ -96,6 +102,7 @@
     class="tree-item-self is-clickable mod-collapsible is-active"
     class:is-active={isActive}
     on:click={() => {
+      dispatcher("openNote", note);
       openFile(getPlugin().app, note.file);
       isCollapsed = false;
     }}
@@ -130,7 +137,7 @@
       }}
     >
       {#each note.children as child (child.name)}
-        <svelte:self note={child} {vault} bind:focusNotes={childrenFocus[child.name]} />
+        <svelte:self note={child} {vault} bind:focusNotes={childrenFocus[child.name]} on:openNote />
       {/each}
     </div>
   {/if}
