@@ -30,6 +30,7 @@ export function createLinkMarkdownProcessor(
     linksEl.forEach((el, index) => {
       const link = links[index];
       // used to check is wikilink or not
+      // aria-label and data-tooltip-position only appear when link is wikilink with alias
       if (!link.original.startsWith("[[") || !link.original.endsWith("]]")) return;
 
       let title: string | undefined, href: string;
