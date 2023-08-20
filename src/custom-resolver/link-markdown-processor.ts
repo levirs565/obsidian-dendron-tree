@@ -45,6 +45,8 @@ export function createLinkMarkdownProcessor(
       el.setText(titleText);
       el.setAttribute("href", href);
       el.setAttribute("data-href", href);
+      el.setAttribute("aria-label", href);
+      el.setAttribute("data-tooltip-position", "top");
     });
   };
 }
