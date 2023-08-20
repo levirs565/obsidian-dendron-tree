@@ -36,14 +36,19 @@ class LinkWidget extends WidgetType {
       (el) => {
         el.createSpan({
           cls: "cm-underline",
-          text: renderLinkTitle(this.app, this.workspace, this.href, this.title, this.sourcePath),
         });
       }
     );
+    this.updateTitle();
 
     this.containerEl.addEventListener("click", () => {
       this.app.workspace.openLinkText(this.href, this.sourcePath);
     });
+  }
+  updateTitle() {
+    this.containerEl.children[0].setText(
+      renderLinkTitle(this.app, this.workspace, this.href, this.title, this.sourcePath)
+    );
   }
   toDOM(view: EditorView): HTMLElement {
     if (!this.containerEl) this.initDOM();
@@ -159,6 +164,7 @@ export class LinkLivePlugin implements PluginValue {
     if (lastWidgetIndex >= 0) {
       const widget = this.widgets[lastWidgetIndex];
       widget.title = link.title;
+      widget.updateTitle();
 
       this.widgets.splice(lastWidgetIndex, 1);
 
