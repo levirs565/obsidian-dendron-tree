@@ -29,6 +29,7 @@ export function createLinkMarkdownProcessor(
 
     linksEl.forEach((el, index) => {
       const link = links[index];
+      // used to check is wikilink or not
       if (!link.original.startsWith("[[") || !link.original.endsWith("]]")) return;
 
       let title: string | undefined, href: string;
@@ -42,6 +43,7 @@ export function createLinkMarkdownProcessor(
       const titleText = renderLinkTitle(app, workspace, href, title, ctx.sourcePath);
       el.setText(titleText);
       el.setAttribute("href", href);
+      el.setAttribute("data-href", href);
     });
   };
 }
