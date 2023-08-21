@@ -7,6 +7,7 @@ import { createRefMarkdownProcessor } from "./ref-markdown-processor";
 import { createLinkOpenHandler } from "./link-open";
 import { LinkLivePlugin } from "./link-live";
 import { createLinkMarkdownProcessor } from "./link-markdown-processor";
+import { LinkRefClickbale } from "./link-ref-clickbale";
 
 export class CustomResolver extends Component {
   pagePreviewPlugin?: PagePreviewPlugin;
@@ -25,6 +26,9 @@ export class CustomResolver extends Component {
       decorations: (value) => value.decorations,
     }
   );
+  linkRefClickbaleExtension = ViewPlugin.define((v) => {
+    return new LinkRefClickbale(v);
+  });
 
   constructor(public plugin: Plugin, public workspace: DendronWorkspace) {
     super();
@@ -34,6 +38,7 @@ export class CustomResolver extends Component {
     this.plugin.app.workspace.onLayoutReady(() => {
       this.plugin.app.workspace.registerEditorExtension(this.refEditorExtenstion);
       this.plugin.app.workspace.registerEditorExtension(this.linkEditorExtenstion);
+      this.plugin.app.workspace.registerEditorExtension(this.linkRefClickbaleExtension);
 
       this.pagePreviewPlugin = this.plugin.app.internalPlugins.getEnabledPluginById("page-preview");
       if (!this.pagePreviewPlugin) return;
@@ -60,6 +65,7 @@ export class CustomResolver extends Component {
     this.plugin.app.workspace.openLinkText = this.originalOpenLinkText;
     MarkdownPreviewRenderer.unregisterPostProcessor(this.linkPostProcessor);
     MarkdownPreviewRenderer.unregisterPostProcessor(this.refPostProcessor);
+    this.plugin.app.workspace.unregisterEditorExtension(this.linkRefClickbaleExtension);
     this.plugin.app.workspace.unregisterEditorExtension(this.linkEditorExtenstion);
     this.plugin.app.workspace.unregisterEditorExtension(this.refEditorExtenstion);
 

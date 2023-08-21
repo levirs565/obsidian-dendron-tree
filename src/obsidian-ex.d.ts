@@ -67,7 +67,18 @@ declare module "obsidian" {
     suggestions: {
       setSuggestions(list: T[]);
     };
-    setAutoDestroy(el: HTMLElement)
+    setAutoDestroy(el: HTMLElement);
     reposition({ left: number, right: number, top: number, bottom: number });
+  }
+
+  interface ClickableToken {
+    type: string;
+    text: string;
+    start: EditorPosition;
+    end: EditorPosition;
+  }
+
+  interface Editor {
+    getClickableTokenAt?: (pos: EditorPosition) => ClickableToken | undefined;
   }
 }
