@@ -22,7 +22,7 @@
   };
 
   async function createCurrentNote() {
-    const path = note.getPath();
+    const path = note.getPath(true);
     const plugin = getPlugin();
     const file = await vault.createNote(path);
     openFile(plugin.app, file);
@@ -36,7 +36,7 @@
 
   function openLookup() {
     const { app, workspace } = getPlugin();
-    new LookupModal(app, workspace, note.getPath()).open();
+    new LookupModal(app, workspace, note.getPath(true)).open();
   }
 
   function openMenu(e: MouseEvent) {

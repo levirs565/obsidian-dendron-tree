@@ -37,7 +37,7 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
           note,
           vault,
         };
-        if (path === query) {
+        if (path === queryLowercase) {
           currentFoundExact = true;
           result.unshift(item);
           continue;
@@ -53,7 +53,7 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
       foundExact = foundExact && currentFoundExact;
     }
 
-    if (!foundExact && query.trim().length > 0) result.unshift(null);
+    if (!foundExact && queryLowercase.trim().length > 0) result.unshift(null);
 
     return result;
   }
