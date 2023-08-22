@@ -132,7 +132,7 @@ export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata
       endHeading = metadata.headings?.[startHeadingIndex + 1];
     } else {
       endHeading = metadata.headings?.find(
-        ({ level }, index) => index > startHeadingIndex && level === startHeading.level
+        ({ level }, index) => index > startHeadingIndex && level <= startHeading.level
       );
     }
 

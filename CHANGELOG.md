@@ -1,14 +1,23 @@
 # Changelog
 
+## Unreleased
+
+Fix:
+
+- When ref target a header that header after it have lower level, ref content start from the header
+  and end in header with same level
+
 ## 1.2.2
 
 Fix:
 
-- Clicking in wikilink with alias point to note with path is wikilink's alias not wikilink's path (Preview mode, source mode and live mode)
-- Wikilink title is swapped when there are two or more wikilink with equal path one of them is edited (Live mode only)
+- Clicking in wikilink with alias point to note with path is wikilink's alias not wikilink's path
+  (Preview mode, source mode and live mode)
+- Wikilink title is swapped when there are two or more wikilink with equal path one of them is
+  edited (Live mode only)
 - Wikilink in give useless tooltip (Preview mode only)
 - Create new note loses capitalization
-- When there are note that path is match query with case insensitive "Create New Note" item show 
+- When there are note that path is match query with case insensitive "Create New Note" item show
 
 ## 1.2.1
 
