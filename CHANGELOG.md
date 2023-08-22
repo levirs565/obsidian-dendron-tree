@@ -6,7 +6,8 @@ Fix:
 
 - When ref target a header that header after it have lower level, ref content start from the header
   and end in header with same level
-- When open link and ref with heading subpath, document not scrolled into start heading 
+- When open link and ref with heading subpath, document not scrolled into start heading
+- After custom resolver disabled, wikilink still use Dendron format (Source mode and live mode)
 
 ## 1.2.2
 

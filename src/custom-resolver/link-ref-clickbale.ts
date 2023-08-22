@@ -30,5 +30,12 @@ export class LinkRefClickbale implements PluginValue {
     }
   }
 
-  destroy(): void {}
+  destroy(): void {
+    if (this.getClickableTokenAtOrig) {
+      const editor = this.view.state.field(editorInfoField).editor;
+      if (editor) {
+        editor.getClickableTokenAt = this.getClickableTokenAtOrig;
+      }
+    }
+  }
 }
