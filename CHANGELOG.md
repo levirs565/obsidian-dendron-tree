@@ -6,6 +6,7 @@ Fix:
 
 - When ref target a header that header after it have lower level, ref content start from the header
   and end in header with same level
+- When open link and ref with heading subpath, document not scrolled into start heading 
 
 ## 1.2.2
 

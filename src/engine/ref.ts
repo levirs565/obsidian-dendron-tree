@@ -159,9 +159,20 @@ export function getRefContentRange(subpath: RefSubpath, metadata: CachedMetadata
   return range;
 }
 
-export function anchorToLinkSubpath(anchor: RefAnchor): string | null {
-  if (anchor.type === "header") return `#${anchor.name}`;
-  else if (anchor.type === "block") return `#^${anchor.name}`;
+export function anchorToLinkSubpath(
+  anchor: RefAnchor,
+  headings: HeadingCache[] | undefined
+): string | null {
+  if (anchor.type === "header") {
+    let name = anchor.name;
+    if (headings) {
+      const { heading } = findHeadingByGithubSlug(headings, name);
+      if (heading) {
+        name = heading.heading;
+      }
+    }
+    return `#${name}`;
+  } else if (anchor.type === "block") return `#^${anchor.name}`;
   return "";
 }
 

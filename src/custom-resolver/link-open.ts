@@ -30,7 +30,11 @@ export function createLinkOpenHandler(
     }
 
     let newLink = file.path;
-    if (target.subpath) newLink += anchorToLinkSubpath(target.subpath.start);
+    if (target.subpath)
+      newLink += anchorToLinkSubpath(
+        target.subpath.start,
+        app.metadataCache.getFileCache(file)?.headings
+      );
     return originalBoundedFunction(newLink, "", newLeaf, openViewState);
   };
 }

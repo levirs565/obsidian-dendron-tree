@@ -66,7 +66,10 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
       const openState: OpenViewState = {};
       if (this.ref.subpath) {
         openState.eState = {
-          subpath: anchorToLinkSubpath(this.ref.subpath.start),
+          subpath: anchorToLinkSubpath(
+            this.ref.subpath.start,
+            this.app.metadataCache.getFileCache(this.file)?.headings
+          ),
         };
       }
       openFile(this.app, this.ref.note?.file, openState);
