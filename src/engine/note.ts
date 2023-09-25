@@ -34,7 +34,7 @@ export class Note {
   }
 
   sortChildren(rescursive: boolean) {
-    this.children.sort((a, b) => a.name.localeCompare(b.name));
+    this.children.sort((a, b) => a.title.localeCompare(b.title));
     if (rescursive) this.children.forEach((child) => child.sortChildren(rescursive));
   }
 
