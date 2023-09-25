@@ -1,7 +1,7 @@
 {
 	"id": "dendron-tree",
 	"name": "Dendron Tree",
-	"version": "1.2.3",
+	"version": "1.3.0",
 	"minAppVersion": "0.15.0",
 	"description": "Add tree for exploring Dendron note.",
 	"author": "Levi Rizki Saputra",

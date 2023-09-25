@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0
+
+Fix:
+
+- Sort note by title not by name
+
+Feat:
+
+- Add open in new tab, open to the right and open in new window menu into file menu
+
 ## 1.2.3
 
 Fix:
