@@ -2,9 +2,9 @@
   import type { Action } from "svelte/types/runtime/action";
   import { slide } from "svelte/transition";
   import { Note } from "../engine/note";
-  import { Menu, getIcon } from "obsidian";
+  import { Menu, Platform, getIcon } from "obsidian";
   import { activeFile, getPlugin, showVaultPath } from "../store";
-  import { openFile } from "../utils";
+  import { OpenFileTarget, openFile } from "../utils";
   import { LookupModal } from "../modal/lookup";
   import { DendronVault } from "src/engine/vault";
   import { createEventDispatcher, tick } from "svelte";
@@ -20,6 +20,10 @@
   const icon: Action = function (node) {
     node.appendChild(getIcon("right-triangle")!);
   };
+
+  function openNoteFile(target: undefined | OpenFileTarget) {
+    openFile(getPlugin().app, note.file, { openTarget: target });
+  }
 
   async function createCurrentNote() {
     const path = note.getPath(true);
@@ -41,6 +45,32 @@
 
   function openMenu(e: MouseEvent) {
     const menu = new Menu();
+
+    if (note.file) {
+      menu.addItem((item) => {
+        item
+          .setTitle("Open in new tab")
+          .setIcon("lucide-file-plus")
+          .onClick(() => openNoteFile("new-tab"));
+      });
+
+      menu.addItem((item) => {
+        item
+          .setTitle("Open to the right")
+          .setIcon("lucide-separator-vertical")
+          .onClick(() => openNoteFile("new-leaf"));
+      });
+
+      if (Platform.isDesktopApp) {
+        menu.addItem((item) => {
+          item
+            .setTitle("Open in new window")
+            .setIcon("lucide-maximize")
+            .onClick(() => openNoteFile("new-window"));
+        });
+      }
+      menu.addSeparator();
+    }
 
     if (!note.file) {
       menu.addItem((item) => {
@@ -103,7 +133,7 @@
     class:is-active={isActive}
     on:click={() => {
       dispatcher("openNote", note);
-      openFile(getPlugin().app, note.file);
+      openNoteFile(undefined);
       isCollapsed = false;
     }}
     on:contextmenu={openMenu}

@@ -72,7 +72,7 @@ export class NoteRefRenderChild extends MarkdownRenderChild {
           ),
         };
       }
-      openFile(this.app, this.ref.note?.file, openState);
+      openFile(this.app, this.ref.note?.file, { openState });
     };
 
     this.renderer = new RefMarkdownRenderer(this, true);
