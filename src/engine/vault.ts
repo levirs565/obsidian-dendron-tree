@@ -88,6 +88,7 @@ export class DendronVault {
     if (!note) return false;
 
     note.syncMetadata(this.resolveMetadata(file));
+    note.parent?.sortChildren(false);
     return true;
   }
 
