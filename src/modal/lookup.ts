@@ -13,6 +13,20 @@ interface LookupItem {
 export class LookupModal extends SuggestModal<LookupItem | null> {
   constructor(app: App, private workspace: DendronWorkspace, private initialQuery: string = "") {
     super(app);
+    this.inputEl.addEventListener("keyup", (event) => {
+      if (event.code === "Tab") {
+        const selectedElement = this.resultContainerEl.querySelector(
+          ".is-selected"
+        ) as HTMLElement | null;
+        if (selectedElement) {
+          const path = selectedElement.dataset["path"];
+          if (path) {
+            this.inputEl.value = path;
+            this.inputEl.dispatchEvent(new Event("input"));
+          }
+        }
+      }
+    });
   }
 
   onOpen(): void {
@@ -59,12 +73,15 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
   }
   renderSuggestion(item: LookupItem | null, el: HTMLElement) {
     el.classList.add("mod-complex");
+    const path = item?.note.getPath();
+    if (path) {
+      el.dataset["path"] = path;
+    }
     el.createEl("div", { cls: "suggestion-content" }, (el) => {
       el.createEl("div", { text: item?.note.title ?? "Create New", cls: "suggestion-title" });
       el.createEl("small", {
         text: item
-          ? item.note.getPath() +
-            (this.workspace.vaultList.length > 1 ? ` (${item.vault.config.name})` : "")
+          ? path + (this.workspace.vaultList.length > 1 ? ` (${item.vault.config.name})` : "")
           : "Note does not exist",
         cls: "suggestion-content",
       });
