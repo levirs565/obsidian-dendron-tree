@@ -61,8 +61,8 @@ export class DendronWorkspace {
 
     if (!vault) return null;
 
-    const { path, subpath } = parseLinktext(link);
-    const target = this.app.metadataCache.getFirstLinkpathDest(path, sourcePath);
+    const { path: linkPath, subpath } = parseLinktext(link);
+    const target = this.app.metadataCache.getFirstLinkpathDest(linkPath, sourcePath);
 
     if (target && target.extension !== "md")
       return {
@@ -70,6 +70,7 @@ export class DendronWorkspace {
         file: target,
       };
 
+    const path = target ? target.basename : linkPath;
     const note = vault.tree.getFromFileName(path);
     return {
       type: "maybe-note",
