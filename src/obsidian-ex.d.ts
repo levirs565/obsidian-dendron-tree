@@ -82,6 +82,11 @@ declare module "obsidian" {
     getClickableTokenAt?: (pos: EditorPosition) => ClickableToken | undefined;
   }
 
+  interface GraphNode {
+    getDisplayText(): string;
+    id: string;
+  }
+
   interface GraphView extends View {
     dataEngine: {
       render(): number;
@@ -97,6 +102,7 @@ declare module "obsidian" {
     };
     renderer: {
       setData: Function;
+      nodes: GraphNode[];
     };
   }
 }

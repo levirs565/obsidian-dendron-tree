@@ -4,7 +4,7 @@ import { getFolderFile } from "../utils";
 import { RefTarget, parseRefSubpath } from "./ref";
 import { parsePath } from "../path";
 
-const DENDRON_URI_START = "dendron://";
+export const DENDRON_URI_START = "dendron://";
 
 export class DendronWorkspace {
   vaultList: DendronVault[] = [];
