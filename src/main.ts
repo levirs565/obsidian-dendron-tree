@@ -7,6 +7,8 @@ import { DEFAULT_SETTINGS, DendronTreePluginSettings, DendronTreeSettingTab } fr
 import { parsePath } from "./path";
 import { DendronWorkspace } from "./engine/workspace";
 import { CustomResolver } from "./custom-resolver";
+import { DendronVault } from "./engine/vault";
+import { Note } from "./engine/note";
 
 export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
@@ -47,6 +49,158 @@ export default class DendronTreePlugin extends Plugin {
     });
 
     this.configureCustomResolver();
+
+    this.registerEvent(
+      this.app.workspace.on("active-leaf-change", (leaf) => {
+        const view = leaf?.view;
+        if (view?.getViewType() === "graph") {
+          const render = view.dataEngine.render;
+          view.dataEngine.render = () => {
+            const filterFile = (file: string, nodeType: string) => {
+              if (!view.dataEngine.searchQueries) {
+                return true;
+              }
+              if ("" === nodeType) {
+                return view.dataEngine.fileFilter.hasOwnProperty(file)
+                  ? view.dataEngine.fileFilter[file]
+                  : !view.dataEngine.hasFilter;
+              }
+              return view.dataEngine.searchQueries.every(function (query) {
+                return !!query.color || !!query.query.matchFilepath(file);
+              });
+            };
+
+            const nodes: Record<string, any> = {};
+            let numLinks = 0;
+
+            const noteList = this.workspace.vaultList.flatMap((vault) =>
+              vault.tree
+                .flatten()
+                .filter((note) => note.file)
+                .map((note) => [vault, note] as [DendronVault, Note])
+            );
+            const progression = view.dataEngine.progression;
+
+            if (progression) {
+              const map = new Map<Note, number>();
+              for (const [, note] of noteList) {
+                const file = note.file;
+                if (!file) {
+                  map.set(note, Infinity);
+                } else {
+                  const metadata = this.app.metadataCache.getFileCache(file)?.frontmatter;
+
+                  if (!metadata) map.set(note, Infinity);
+                  else {
+                    const created = parseInt(metadata["created"]);
+                    map.set(note, isNaN(created) ? Infinity : created);
+                  }
+                }
+              }
+              noteList.sort(([, a], [, b]) => map.get(a)! - map.get(b)!);
+            }
+
+            let stopNote: Note | undefined = undefined;
+            for (const [vault, note] of noteList) {
+              if (!filterFile(note.file?.path ?? "", "")) continue;
+
+              const node: any = {
+                type: "",
+                links: {},
+              };
+              nodes[`dendron://${vault.config.name}/${note.getPath()}`] = node;
+
+              if (view.dataEngine.options.showOrphans) {
+                if (progression && progression === numLinks) {
+                  stopNote = note;
+                }
+                numLinks++;
+              }
+
+              if (!note.file) continue;
+              const meta = this.app.metadataCache.getFileCache(note.file);
+              if (!meta) continue;
+
+              const listOfLinks = (meta.links ?? []).concat(meta.embeds ?? []);
+
+              for (const link of listOfLinks) {
+                const href = link.original.startsWith("[[")
+                  ? link.original.substring(2, link.original.length - 2).split("|", 2)[0]
+                  : link.link;
+                const target = this.workspace.resolveRef(note.file.path, href);
+                if (target?.type === "maybe-note") {
+                  const linkName = `dendron://${target.vaultName}/${target.path}`.toLowerCase();
+                  if (!progression || numLinks < progression) {
+                    if (!target.note?.file) {
+                      if (!filterFile(target.note?.file?.path ?? "", "unresolved")) continue;
+                      if (view.dataEngine.options.hideUnresolved) continue;
+                      nodes[linkName] = {
+                        type: "unresolved",
+                        links: {},
+                      };
+                    } else {
+                      if (!filterFile(target.note?.file?.path ?? "", "")) continue;
+                    }
+
+                    node.links[linkName] = true;
+                  }
+
+                  if (progression && progression === numLinks) {
+                    stopNote = note;
+                  }
+
+                  numLinks++;
+                }
+              }
+            }
+            if (progression) {
+              const index = noteList.findIndex(([, note]) => note === stopNote);
+
+              if (index >= 0) {
+                for (let i = index + 1; i < noteList.length; i++) {
+                  const [vault, note] = noteList[i];
+
+                  const p = `dendron://${vault.config.name}/${note.getPath()}`;
+                  if (!nodes[p]) {
+                    console.log(`Delete failed ${p}`);
+                  }
+                  delete nodes[p];
+                }
+              }
+            }
+
+            if (!view.dataEngine.options.showOrphans) {
+              const isNodeReferenced = new Map<string, boolean>();
+
+              for (const nodeName of Object.keys(nodes)) {
+                for (const link of Object.keys(nodes[nodeName].links)) {
+                  if (link === nodeName) continue;
+                  isNodeReferenced.set(link, true);
+                }
+              }
+
+              for (const nodeName of Object.keys(nodes)) {
+                if (isNodeReferenced.get(nodeName)) continue;
+
+                let canDelete = true;
+                for (const link of Object.keys(nodes[nodeName].links)) {
+                  if (link === nodeName) continue;
+                  canDelete = false;
+                  break;
+                }
+
+                if (canDelete) delete nodes[nodeName];
+              }
+            }
+            view.renderer.setData({
+              nodes,
+              numLinks,
+            });
+            return numLinks;
+          };
+        }
+      })
+    );
   }
 
   async migrateSettings() {
