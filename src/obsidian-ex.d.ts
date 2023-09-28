@@ -87,22 +87,38 @@ declare module "obsidian" {
     id: string;
   }
 
+  interface GraphEngine {
+    render(): number;
+    hasFilter: boolean;
+    fileFilter: Record<string, boolean>;
+    options: {
+      showAttachments: boolean;
+      showOrphans: true;
+      hideUnresolved: boolean;
+      localFile: string;
+      localBacklinks: boolean;
+      localForelinks: boolean;
+      localInterlinks: boolean;
+      localJumps: number;
+    };
+    progression: number;
+    searchQueries: any[] | undefined;
+    renderer: GraphRenderer;
+    view: GraphView | LocalGraphView;
+  }
+
+  interface GraphRenderer {
+    setData: Function;
+    nodes: GraphNode[];
+  }
+
+  interface LocalGraphView extends View {
+    engine: GraphEngine;
+    renderer: GraphRenderer;
+  }
+
   interface GraphView extends View {
-    dataEngine: {
-      render(): number;
-      hasFilter: boolean;
-      fileFilter: Record<string, boolean>;
-      options: {
-        showAttachments: boolean;
-        showOrphans: true;
-        hideUnresolved: boolean;
-      };
-      progression: number;
-      searchQueries: any[] | undefined;
-    };
-    renderer: {
-      setData: Function;
-      nodes: GraphNode[];
-    };
+    dataEngine: GraphEngine;
+    renderer: GraphRenderer;
   }
 }
