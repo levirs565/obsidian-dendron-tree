@@ -81,4 +81,22 @@ declare module "obsidian" {
   interface Editor {
     getClickableTokenAt?: (pos: EditorPosition) => ClickableToken | undefined;
   }
+
+  interface GraphView extends View {
+    dataEngine: {
+      render(): number;
+      hasFilter: boolean;
+      fileFilter: Record<string, boolean>;
+      options: {
+        showAttachments: boolean;
+        showOrphans: true;
+        hideUnresolved: boolean;
+      };
+      progression: number;
+      searchQueries: any[] | undefined;
+    };
+    renderer: {
+      setData: Function;
+    };
+  }
 }
