@@ -13,6 +13,7 @@ export default class DendronTreePlugin extends Plugin {
   settings: DendronTreePluginSettings;
   workspace: DendronWorkspace = new DendronWorkspace(this.app);
   customResolver?: CustomResolver;
+  customGraph?: CustomGraph;
 
   async onload() {
     await this.loadSettings();
@@ -48,7 +49,7 @@ export default class DendronTreePlugin extends Plugin {
     });
 
     this.configureCustomResolver();
-    this.addChild(new CustomGraph(this, this.workspace));
+    this.configureCustomGraph();
   }
 
   async migrateSettings() {
@@ -95,6 +96,16 @@ export default class DendronTreePlugin extends Plugin {
     } else if (!this.settings.customResolver && this.customResolver) {
       this.removeChild(this.customResolver);
       this.customResolver = undefined;
+    }
+  }
+
+  configureCustomGraph() {
+    if (this.settings.customGraph && !this.customGraph) {
+      this.customGraph = new CustomGraph(this, this.workspace);
+      this.addChild(this.customGraph);
+    } else if (!this.settings.customGraph && this.customGraph) {
+      this.removeChild(this.customGraph);
+      this.customGraph = undefined;
     }
   }
 

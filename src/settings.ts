@@ -12,6 +12,7 @@ export interface DendronTreePluginSettings {
   autoGenerateFrontmatter: boolean;
   autoReveal: boolean;
   customResolver: boolean;
+  customGraph: boolean;
 }
 
 export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
@@ -24,6 +25,7 @@ export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
   autoGenerateFrontmatter: true,
   autoReveal: true,
   customResolver: false,
+  customGraph: false,
 };
 
 export class DendronTreeSettingTab extends PluginSettingTab {
@@ -73,6 +75,16 @@ export class DendronTreeSettingTab extends PluginSettingTab {
         });
       });
 
+    new Setting(containerEl)
+      .setName("Custom Graph Engine")
+      .setDesc("Use custom graph engine to render graph (Experimental)")
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.customGraph).onChange(async (value) => {
+          this.plugin.settings.customGraph = value;
+          await this.plugin.saveSettings();
+        });
+      });
+
     new Setting(containerEl).setName("Vault List").setHeading();
     for (const vault of this.plugin.settings.vaultList) {
       new Setting(containerEl)
@@ -111,5 +123,6 @@ export class DendronTreeSettingTab extends PluginSettingTab {
     super.hide();
     this.plugin.onRootFolderChanged();
     this.plugin.configureCustomResolver();
+    this.plugin.configureCustomGraph();
   }
 }
