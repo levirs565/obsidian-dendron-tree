@@ -107,8 +107,25 @@ declare module "obsidian" {
     view: GraphView | LocalGraphView;
   }
 
+  interface GraphNodeData {
+    links: Record<string, boolean>;
+    type: string;
+  }
+
+  interface AbstractGraphData {
+    nodes: Record<string, GraphNodeData>;
+  }
+
+  interface GraphData extends AbstractGraphData {
+    numLinks: number;
+  }
+
+  interface LocalGraphData extends AbstractGraphData {
+    weights: Record<string, number>;
+  }
+
   interface GraphRenderer {
-    setData: Function;
+    setData(data: GraphData | LocalGraphData);
     nodes: GraphNode[];
   }
 

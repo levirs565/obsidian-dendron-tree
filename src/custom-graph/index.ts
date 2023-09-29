@@ -38,6 +38,7 @@ export class CustomGraph extends Component {
                     type: "",
                   },
                 },
+                numLinks: 1,
               });
               replace();
             }

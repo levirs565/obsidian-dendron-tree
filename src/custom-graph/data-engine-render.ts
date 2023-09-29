@@ -1,4 +1,4 @@
-import { App, GraphEngine, TFile } from "obsidian";
+import { App, GraphData, GraphEngine, GraphNodeData, LocalGraphData, TFile } from "obsidian";
 import { Note } from "src/engine/note";
 import { DendronVault } from "src/engine/vault";
 import { DendronWorkspace } from "src/engine/workspace";
@@ -23,8 +23,8 @@ function getGlobalNodes(
   options: GraphEngine["options"],
   filterFile: (file: string, type: string) => boolean,
   progression: number
-) {
-  const nodes: Record<string, any> = {};
+): GraphData {
+  const nodes: Record<string, GraphNodeData> = {};
   let numLinks = 0;
 
   const dendronNodeList: DendronGraphNode[] = workspace.vaultList.flatMap((vault) =>
@@ -82,7 +82,7 @@ function getGlobalNodes(
       const { note, vault } = dendronNode;
       if (!filterFile(note.file?.path ?? "", "")) continue;
 
-      const node: any = {
+      const node: GraphNodeData = {
         type: "",
         links: {},
       };
@@ -150,7 +150,7 @@ function getGlobalNodes(
         numLinks++;
       }
 
-      const node: any = {
+      const node: GraphNodeData = {
         type: "attachment",
         links: {},
       };
@@ -189,8 +189,8 @@ function getLocalNodes(
   workspace: DendronWorkspace,
   options: GraphEngine["options"],
   globalNodes: ReturnType<typeof getGlobalNodes>["nodes"]
-) {
-  const localNodes: Record<string, any> = {};
+): LocalGraphData {
+  const localNodes: Record<string, GraphNodeData> = {};
   const localWeights: Record<string, number> = {};
   const result = {
     nodes: localNodes,
@@ -229,7 +229,7 @@ function getLocalNodes(
   console.log(options);
 
   const build = (weight: number) => {
-    const t: Record<string, any> = {};
+    const t: Record<string, GraphNodeData> = {};
     for (const nodeName of Object.keys(globalNodes)) {
       const node = globalNodes[nodeName];
       if ("tag" === node.type) continue;
@@ -309,7 +309,13 @@ export function createDataEngineRender(
       this.progression = 0;
     }
 
-    let data: any = getGlobalNodes(app, workspace, this.options, filterFile, this.progression);
+    let data: GraphData | LocalGraphData = getGlobalNodes(
+      app,
+      workspace,
+      this.options,
+      filterFile,
+      this.progression
+    );
     const { nodes, numLinks } = data;
 
     if (this.options.localFile) {
