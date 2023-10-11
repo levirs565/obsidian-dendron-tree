@@ -4,6 +4,7 @@ import { openFile } from "../utils";
 import { DendronVault } from "../engine/vault";
 import { SelectVaultModal } from "./select-vault";
 import { DendronWorkspace } from "../engine/workspace";
+import { CreateNoteWarning } from "./create-note-warning";
 
 interface LookupItem {
   note: Note;
@@ -99,9 +100,21 @@ export class LookupModal extends SuggestModal<LookupItem | null> {
 
     const path = item ? item.note.getPath() : this.inputEl.value;
 
-    const doCreate = async (vault: DendronVault) => {
+    const doCreateInternal = async (vault: DendronVault, path: string) => {
       const file = await vault.createNote(path);
       return openFile(vault.app, file);
+    };
+
+    const doCreate = async (vault: DendronVault) => {
+      if (path.startsWith("root.")) {
+        const modal = new CreateNoteWarning(this.app, path, async (omitRoot) => {
+          const newPath = omitRoot ? path.substring(path.indexOf(".") + 1) : path;
+          doCreateInternal(vault, newPath);
+        });
+        modal.open();
+        return Promise.resolve();
+      }
+      return doCreateInternal(vault, path);
     };
     if (item?.vault) {
       await doCreate(item.vault);
