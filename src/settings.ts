@@ -13,6 +13,7 @@ export interface DendronTreePluginSettings {
   autoReveal: boolean;
   customResolver: boolean;
   customGraph: boolean;
+  deleteMethod: string;
 }
 
 export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: DendronTreePluginSettings = {
   autoReveal: true,
   customResolver: false,
   customGraph: false,
+  deleteMethod: "moveToTrash",
 };
 
 export class DendronTreeSettingTab extends PluginSettingTab {
@@ -42,6 +44,20 @@ export class DendronTreeSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     containerEl.createEl("h2", { text: "Dendron Tree Settting" });
+    
+    new Setting(containerEl)
+    .setName("Deletion Method")
+    .setDesc(
+      "What happens when you delete a file"
+    )
+    .addDropdown(dropdown => dropdown
+      .addOption('moveToTrash', 'Move to Trash')
+      .addOption('deletePermanently', 'Delete Permanently')
+      .setValue(this.plugin.settings.deleteMethod || 'moveToTrash')
+      .onChange(async (value) => {
+        this.plugin.settings.deleteMethod = value;
+        await this.plugin.saveSettings();
+      }));
 
     new Setting(containerEl)
       .setName("Auto Generate Front Matter")

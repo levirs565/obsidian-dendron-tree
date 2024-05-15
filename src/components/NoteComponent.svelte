@@ -35,7 +35,10 @@
   function deleteCurrentNote() {
     const plugin = getPlugin();
     if (!note.file) return;
-    plugin.app.vault.delete(note.file);
+    if (plugin.settings.deleteMethod === "moveToTrash")
+      plugin.app.vault.trash(note.file, true);
+    else if (plugin.settings.deleteMethod === "deletePermanently")
+      plugin.app.vault.delete(note.file);
   }
 
   function openLookup() {
