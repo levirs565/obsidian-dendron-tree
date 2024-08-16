@@ -64,7 +64,9 @@ export class Note {
   }
 
   syncMetadata(metadata: NoteMetadata | undefined) {
-    this.title = metadata?.title ?? generateNoteTitle(this.originalName, this.titlecase);
+    this.title = metadata?.title
+      ? String(metadata?.title)
+      : generateNoteTitle(this.originalName, this.titlecase);
   }
 }
 
